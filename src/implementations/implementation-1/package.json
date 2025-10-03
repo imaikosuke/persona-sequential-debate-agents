@@ -1,0 +1,12 @@
+{
+  "name": "implementation-1",
+  "version": "1.0.0",
+  "description": "Implementation 1 of Persona Sequential Debate Agents",
+  "main": "src/mastra/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "mastra dev",
+    "build": "mastra build",
+    "start": "mastra start"
+  }
+}

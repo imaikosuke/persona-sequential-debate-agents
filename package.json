@@ -1,13 +1,25 @@
 {
   "name": "persona-sequential-debate-agents",
   "version": "1.0.0",
-  "description": "",
+  "description": "Persona Sequential Debate Agents - Research implementations",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "mastra dev",
     "build": "mastra build",
-    "start": "mastra start"
+    "start": "mastra start",
+    "dev:impl1": "pnpm --filter implementation-1 dev",
+    "dev:impl2": "pnpm --filter implementation-2 dev",
+    "dev:impl3": "pnpm --filter implementation-3 dev",
+    "dev:impl4": "pnpm --filter implementation-4 dev",
+    "build:impl1": "pnpm --filter implementation-1 build",
+    "build:impl2": "pnpm --filter implementation-2 build",
+    "build:impl3": "pnpm --filter implementation-3 build",
+    "build:impl4": "pnpm --filter implementation-4 build",
+    "start:impl1": "pnpm --filter implementation-1 start",
+    "start:impl2": "pnpm --filter implementation-2 start",
+    "start:impl3": "pnpm --filter implementation-3 start",
+    "start:impl4": "pnpm --filter implementation-4 start"
   },
   "keywords": [],
   "author": "",
