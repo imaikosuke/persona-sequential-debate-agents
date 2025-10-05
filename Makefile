@@ -24,7 +24,10 @@ help:
 	@echo ""
 	@echo "ユーティリティ:"
 	@echo "  make install   - 依存関係をインストール"
-	@echo "  make clean     - ビルド成果物をクリーンアップ"
+	@echo "  make clean      - ビルド成果物をクリーンアップ"
+	@echo "  make lint      - ESLintでコードをチェック"
+	@echo "  make lint-fix   - ESLintで自動修正"
+	@echo "  make typecheck  - TypeScriptの型チェック"
 
 # 依存関係のインストール
 install:
