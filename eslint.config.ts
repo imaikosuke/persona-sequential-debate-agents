@@ -1,23 +1,23 @@
 // eslint.config.ts
-import eslint from '@eslint/js'
-import { defineConfig } from 'eslint/config'
-import n from 'eslint-plugin-n'
-import promise from 'eslint-plugin-promise'
-import simpleImportSort from 'eslint-plugin-simple-import-sort'
-import unicorn from 'eslint-plugin-unicorn'
-import tseslint from 'typescript-eslint'
+import eslint from "@eslint/js";
+import { defineConfig } from "eslint/config";
+import n from "eslint-plugin-n";
+import promise from "eslint-plugin-promise";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
+import unicorn from "eslint-plugin-unicorn";
+import tseslint from "typescript-eslint";
 
 // グローバル無視（Flat Config では .eslintignore 不要）
 const ignores = [
-  '**/dist/**',
-  '**/build/**',
-  '**/.pnpm/**',
-  '**/node_modules/**',
-  '**/.mastra/**',
-  '**/*.d.ts',
-  '**/eslint.config.*',
-  '**/prettier.config.*',
-]
+  "**/dist/**",
+  "**/build/**",
+  "**/.pnpm/**",
+  "**/node_modules/**",
+  "**/.mastra/**",
+  "**/*.d.ts",
+  "**/eslint.config.*",
+  "**/prettier.config.*",
+];
 
 export default defineConfig([
   { ignores },
@@ -34,23 +34,23 @@ export default defineConfig([
   // 追加プラグイン
   {
     plugins: {
-      'simple-import-sort': simpleImportSort,
+      "simple-import-sort": simpleImportSort,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       promise,
       n,
-      unicorn
+      unicorn,
     },
     rules: {
       // ---- import 並び替え（自動修正可） ----
-      'simple-import-sort/imports': 'error',
-      'simple-import-sort/exports': 'error',
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
 
       // ---- promise / node / unicorn の実用ルール（抜粋） ----
-      'promise/always-return': 'off',
-      'promise/no-nesting': 'warn',
-      'n/no-unsupported-features/es-syntax': 'off',
-      'unicorn/prefer-optional-catch-binding': 'error',
-      'unicorn/filename-case': ['error', { case: 'kebabCase' }]
+      "promise/always-return": "off",
+      "promise/no-nesting": "warn",
+      "n/no-unsupported-features/es-syntax": "off",
+      "unicorn/prefer-optional-catch-binding": "error",
+      "unicorn/filename-case": ["error", { case: "kebabCase" }],
     },
 
     languageOptions: {
@@ -60,26 +60,26 @@ export default defineConfig([
         // 大規模/モノレポでの信頼性と設定簡素化に寄与
         // 参照: typescript-eslint docs/blog
         projectService: true,
-        tsconfigRootDir: new URL('.', import.meta.url).pathname
-      }
-    }
+        tsconfigRootDir: new URL(".", import.meta.url).pathname,
+      },
+    },
   },
 
   // JS/TS ファイル対象
   {
-    files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts', '**/*.js', '**/*.mjs', '**/*.cjs'],
+    files: ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts", "**/*.js", "**/*.mjs", "**/*.cjs"],
     rules: {
       // 例: any を厳しくしたい場合は strictTypeChecked も検討
       // '@typescript-eslint/no-unsafe-assignment': 'warn',
-    }
+    },
   },
 
   // テスト用（例: Vitest/Jest 想定）
-//   {
-//     files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
-//     rules: {
-//       // テストでは柔らかめに
-//       'unicorn/filename-case': 'off'
-//     }
-//   }
-])
+  //   {
+  //     files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+  //     rules: {
+  //       // テストでは柔らかめに
+  //       'unicorn/filename-case': 'off'
+  //     }
+  //   }
+]);
