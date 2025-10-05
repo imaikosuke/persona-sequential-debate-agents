@@ -1,11 +1,11 @@
 // eslint.config.ts
 import eslint from '@eslint/js'
 import { defineConfig } from 'eslint/config'
-import tseslint from 'typescript-eslint'
-import simpleImportSort from 'eslint-plugin-simple-import-sort'
-import promise from 'eslint-plugin-promise'
 import n from 'eslint-plugin-n'
+import promise from 'eslint-plugin-promise'
+import simpleImportSort from 'eslint-plugin-simple-import-sort'
 import unicorn from 'eslint-plugin-unicorn'
+import tseslint from 'typescript-eslint'
 
 // グローバル無視（Flat Config では .eslintignore 不要）
 const ignores = [
@@ -33,6 +33,7 @@ export default defineConfig([
   {
     plugins: {
       'simple-import-sort': simpleImportSort,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       promise,
       n,
       unicorn
