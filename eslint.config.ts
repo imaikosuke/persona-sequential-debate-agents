@@ -14,7 +14,9 @@ const ignores = [
   '**/.pnpm/**',
   '**/node_modules/**',
   '**/.mastra/**',
-  '**/*.d.ts'
+  '**/*.d.ts',
+  '**/eslint.config.*',
+  '**/prettier.config.*',
 ]
 
 export default defineConfig([

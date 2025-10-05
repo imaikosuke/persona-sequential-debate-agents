@@ -1,12 +1,12 @@
 {
-    "eslint.useFlatConfig": true,
-    "eslint.workingDirectories": [{ "mode": "auto" }],
-    "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": "explicit"
-    },
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "files.associations": {
-      "eslint.config.*": "javascript"
-    }
-  }
-  
+  "eslint.useFlatConfig": true,
+  "eslint.workingDirectories": [{ "mode": "auto" }],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.associations": {
+    "eslint.config.*": "javascript"
+  },
+  "editor.formatOnSave": true
+}

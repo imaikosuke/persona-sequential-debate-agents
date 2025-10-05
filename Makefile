@@ -1,4 +1,4 @@
-.PHONY: help dev build start clean install
+.PHONY: help dev build start clean install lint lint-fix format format-fix typecheck
 
 # デフォルトターゲット
 help:
@@ -27,6 +27,8 @@ help:
 	@echo "  make clean      - ビルド成果物をクリーンアップ"
 	@echo "  make lint      - ESLintでコードをチェック"
 	@echo "  make lint-fix   - ESLintで自動修正"
+	@echo "  make format     - Prettierでコードフォーマットをチェック"
+	@echo "  make format-fix - Prettierでコードフォーマットを自動修正"
 	@echo "  make typecheck  - TypeScriptの型チェック"
 
 # 依存関係のインストール
@@ -98,6 +100,12 @@ lint:
 
 lint-fix:
 	pnpm lint:fix
+
+format:
+	pnpm format
+
+format-fix:
+	pnpm format:fix
 
 typecheck:
 	pnpm typecheck

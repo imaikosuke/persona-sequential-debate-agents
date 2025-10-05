@@ -22,6 +22,8 @@
     "start:impl4": "pnpm --filter implementation-4 start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "keywords": [],
