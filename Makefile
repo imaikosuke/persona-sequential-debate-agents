@@ -1,6 +1,3 @@
-# Persona Sequential Debate Agents - Makefile
-# 研究用の4つの実装を効率的に実行するためのMakefile
-
 .PHONY: help dev build start clean install
 
 # デフォルトターゲット
@@ -93,3 +90,11 @@ start-4:
 	@echo "Implementation 4を本番モードで実行中..."
 	pnpm --filter implementation-4 start
 
+lint:
+	pnpm lint
+
+lint-fix:
+	pnpm lint:fix
+
+typecheck:
+	pnpm typecheck

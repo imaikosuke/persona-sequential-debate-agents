@@ -19,7 +19,10 @@
     "start:impl1": "pnpm --filter implementation-1 start",
     "start:impl2": "pnpm --filter implementation-2 start",
     "start:impl3": "pnpm --filter implementation-3 start",
-    "start:impl4": "pnpm --filter implementation-4 start"
+    "start:impl4": "pnpm --filter implementation-4 start",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "keywords": [],
   "author": "",
