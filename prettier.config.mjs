@@ -13,10 +13,7 @@ export default {
   arrowParens: 'avoid', // アロー関数の単一パラメータで括弧を省略
   proseWrap: 'preserve', // プロセス（Markdown等）は改行を保持
 
-  plugins: [
-    'prettier-plugin-packagejson',
-    'prettier-plugin-organize-imports', // import文の整理
-  ],
+  plugins: ['prettier-plugin-packagejson'],
 
   // ファイルタイプ別の設定
   overrides: [
