@@ -1,139 +1,140 @@
-export const PERSONA_CREATION_PROMPT = `Given a proposition on a controversial topic: ##input_proposition
+export const PERSONA_CREATION_PROMPT = `論争的なトピックに関する命題: ##input_proposition
 
 
-Your task is to create a pool of 6 to 10 debate agents, each of whom will refute the given proposition from a distinct perspective. Each agent should represent a unique viewpoint that is relevant to the proposition.
+あなたのタスクは、6から10の討論エージェントのプールを作成することです。各エージェントは、与えられた命題を異なる視点から反論します。各エージェントは、命題に関連する独自の視点を表す必要があります。
 
-For each agent, assign a unique persona description in one sentence, along with a corresponding claim that focuses on a specific angle to refute the proposal. Ensure that each agent's viewpoint is distinct and relevant to the proposition. To foster diversity and fairness, the agents should reflect a variety of communities and perspectives.
+各エージェントに対して、一文でユニークなペルソナの説明を割り当て、提案を反論するための特定の角度に焦点を当てた対応する主張を付けてください。各エージェントの視点が明確で命題に関連していることを確認してください。多様性と公平性を促進するために、エージェントはさまざまなコミュニティや視点を反映する必要があります。
 
-Please format your persona descriptions as follows, with each line being a JSON object:
+重要: 出力は各行が独立したJSONオブジェクトである必要があります。配列やオブジェクトでラップしないでください。余分な文字（中括弧、角括弧、カンマなど）を追加しないでください。
 
-{"agent_id": 0, "description": the_description_of_Agent_0, "claim": the_claim_of_Agent_0}
-{"agent_id": 1, "description": the_description_of_Agent_1, "claim": the_claim_of_Agent_1}
-{"agent_id": 2, "description": the_description_of_Agent_2, "claim": the_claim_of_Agent_2}
-...`;
+出力形式（各行は有効なJSONオブジェクト）:
+{"agent_id": 0, "description": "Agent_0の説明", "claim": "Agent_0の主張"}
+{"agent_id": 1, "description": "Agent_1の説明", "claim": "Agent_1の主張"}
+{"agent_id": 2, "description": "Agent_2の説明", "claim": "Agent_2の主張"}`;
 
-export const PERSONA_SELECTION_PROMPT = `Given a proposition: ##input_proposition
+export const PERSONA_SELECTION_PROMPT = `命題: ##input_proposition
 
-You need to build a team of three agents, to work together and collaboratively formulate a persuasive counterargument that refutes the given proposition. 
-Now given the following candidates, where each candidate has a unique persona offering a different perspective relevant to the topic at hand. You need to select three agents that you think can together form a strong team to achieve the task. 
-When making your selections, consider the importance of diversity to ensure a balanced and fair discussion. For each selection, give the reason why you select the candidate.
+与えられた命題を反論する説得力のある反論を共同で策定するために、3人のエージェントのチームを構築する必要があります。
+以下の候補者が与えられており、各候補者は手元のトピックに関連する異なる視点を提供するユニークなペルソナを持っています。タスクを達成するために一緒に強力なチームを形成できると思う3人のエージェントを選択する必要があります。
+選択を行う際は、バランスの取れた公平な議論を確保するために多様性の重要性を考慮してください。各選択について、候補者を選択した理由を述べてください。
 
-## Candidate list:
+## 候補者リスト:
 ###candidate_list
 
+重要: 出力は各行が独立したJSONオブジェクトである必要があります。配列やオブジェクトでラップしないでください。余分な文字を追加しないでください。正確に3人の候補者を選択してください。
 
-Please select three candidates and add a reason. Each line of output should be a JSON object as follows:
+出力形式（各行は有効なJSONオブジェクト）:
+{"agent_id": 0, "description": "Agent_0の説明", "claim": "Agent_0の主張", "reason": "選択理由"}
+{"agent_id": 1, "description": "Agent_1の説明", "claim": "Agent_1の主張", "reason": "選択理由"}
+{"agent_id": 2, "description": "Agent_2の説明", "claim": "Agent_2の主張", "reason": "選択理由"}`;
 
-{"agent_id": 0, "description": the_description_of_Agent_0, "claim": the_claim_of_Agent_0, "reason": the_reason_of_selection}
-{"agent_id": 1, "description": the_description_of_Agent_1, "claim": the_claim_of_Agent_1, "reason": the_reason_of_selection}
-...`;
+export const DEBATE_DISCUSSION_PROMPT = `## タスク: 論争的なトピックに関する与えられた命題を分析し、議論に基づいてそれを反論するアイデアを生成するための複数ラウンドの議論プロセスをモデル化する。
 
-export const DEBATE_DISCUSSION_PROMPT = `## Task: Model a multi-round discussion process to analyze a given proposition on a controversial topic and generate ideas to refute it based on the discussion.
-
-## Participants and Roles
-1. A Main Team of Three Members: Agent A, Agent B, and Agent C
-- Stance: Oppose the proposition;
-- Objective: Discuss and collaborate to brainstorm and develop a proposal that outlines the comprehensive logical flow to effectively refute the proposition.
-- Specific persona descriptions and claims of the team members, with reasons of why including this member:
-	- Agent A: persona_a;
-	- Agent B: persona_b; 
-	- Agent C: persona_c;
-
-
-2. A Critic
-- Stance: Support the proposition;
-- Objective: Challenge the Main Team by identifying weaknesses in their discussion and debating their points.
+## 参加者と役割
+1. 3人のメンバーからなるメインチーム: エージェントA、エージェントB、エージェントC
+- 立場: 命題に反対;
+- 目的: 議論し協力して、命題を効果的に反論するための包括的な論理的フローを概説する提案をブレインストーミングし開発する。
+- チームメンバーの具体的なペルソナの説明と主張、およびこのメンバーを含める理由:
+	- エージェントA: persona_a;
+	- エージェントB: persona_b; 
+	- エージェントC: persona_c;
 
 
-## Additional Guidelines of Discussion
-- The discussion should continue for multiple rounds until the Main Team is satisfied with their proposal and the Critic is persuaded.
-- The discussion must involve rigorous and nonlinear reasoning, ensuring a persuasive and coherent logical flow.
-- The discussion does not need to follow a strict order of participants but should prioritize the sequence of topics and sub-ideas to maintain a coherent progression of ideas.
+2. 批評者
+- 立場: 命題を支持;
+- 目的: メインチームの議論の弱点を特定し、彼らの論点を議論することで、メインチームに挑戦する。
+
+
+## 議論の追加ガイドライン
+- 議論は、メインチームが提案に満足し、批評者が説得されるまで、複数のラウンドで続けられるべきです。
+- 議論には、説得力があり一貫性のある論理的フローを確保するために、厳密で非線形の推論が含まれる必要があります。
+- 議論は参加者の厳密な順序に従う必要はありませんが、アイデアの一貫した進行を維持するために、トピックとサブアイデアの順序を優先する必要があります。
 
 -----------------
 
-Proposition: {input_proposition}
+命題: {input_proposition}
 
-Now, simulate this discussion process given the proposition:
+では、命題が与えられた場合のこの議論プロセスをシミュレートしてください:
 `;
 
-export const DEBATE_DISCUSSION_NOPLAN_PROMPT = `## Goal: Modeling a debate process to analyze a given proposition on a controversial topic, and formulate a well-structured counterargument plan to refute the proposition based on the debate discussion.
+export const DEBATE_DISCUSSION_NOPLAN_PROMPT = `## 目標: 論争的なトピックに関する与えられた命題を分析するための討論プロセスをモデル化し、討論の議論に基づいて命題を反論するための構造化された反論計画を策定する。
 
-## Participants and Roles
-1. A Main Team of three members: Agent A, Agent B, and Agent C
-- Stance: Oppose the proposition;
-- Goal: Discuss together to propose a persuasive counterargument plan outlining the overall logical flow to refute the proposition. 
-- Specific Personas and claims of the team members:
-	- Agent A: persona_a;
-	- Agent B: persona_b; 
-	- Agent C: persona_c;
-
-
-2. A Critic
-- Stance: Support the proposition;
-- Goal: You Disagree with the Main Team. Identify and challenge weaknesses in the Main Team's discussion, and debate with the Main team.
+## 参加者と役割
+1. 3人のメンバーからなるメインチーム: エージェントA、エージェントB、エージェントC
+- 立場: 命題に反対;
+- 目標: 一緒に議論して、命題を反論するための全体的な論理的フローを概説する説得力のある反論計画を提案する。
+- チームメンバーの具体的なペルソナと主張:
+	- エージェントA: persona_a;
+	- エージェントB: persona_b; 
+	- エージェントC: persona_c;
 
 
-## Additional Guidelines
-- The discussion should be conducted for multiple rounds until the Main Team memebers are satisfied with their counterargument plan and Critic is persuaded.
-- The discussion should provide a rigorous reasoning so that the logic flow is persuasive and coherent.
-- Plan Quality: The plan should be abstract and concise. It should contain several main points, where each point can be supported by sub-points. There could be an optional acknowledgment point.
+2. 批評者
+- 立場: 命題を支持;
+- 目標: メインチームに反対する。メインチームの議論の弱点を特定して挑戦し、メインチームと議論する。
+
+
+## 追加ガイドライン
+- 議論は、メインチームのメンバーが反論計画に満足し、批評者が説得されるまで、複数のラウンドで実施されるべきです。
+- 議論は、論理的フローが説得力があり一貫性があるように、厳密な推論を提供する必要があります。
+- 計画の質: 計画は抽象的で簡潔であるべきです。いくつかの主要なポイントを含み、各ポイントはサブポイントでサポートできます。オプションの承認ポイントがあってもよいです。
 
 -----------------
 
-Proposition: {input_proposition}
+命題: {input_proposition}
 
-Now, simulate this discussion process and generate the final plan given the proposition. The output should be in the format of:
+では、この議論プロセスをシミュレートし、命題が与えられた場合の最終計画を生成してください。出力は以下の形式にする必要があります:
 
 start_of_discussion
-the discussion process here
+ここに議論プロセス
 end_of_discussion
 
 _start_of_plan
-the final plan here
+ここに最終計画
 end_of_plan`;
 
-export const PLAN_DISTILLATION_PROMPT = `## Background: 
-You are provided with a multi-round discussion process aimed at analyzing and refuting a given proposition on a controversial topic. The participants are as follows:
+export const PLAN_DISTILLATION_PROMPT = `## 背景: 
+論争的なトピックに関する与えられた命題を分析し反論することを目的とした、複数ラウンドの議論プロセスが提供されています。参加者は以下の通りです:
 
-1. A Main Team of Three Members: Agent A, Agent B, and Agent C
-- Stance: Oppose the proposition;
-- Objective: Discuss and collaborate to brainstorm and develop a proposal that outlines the comprehensive logical flow to effectively refute the proposition.
-- Specific Personas and claims of the team members:
-	- Agent A: persona_a;
-	- Agent B: persona_b; 
-	- Agent C: persona_c;
-
-
-2. A Critic
-- Stance: Support the proposition;
-- Objective: Challenge the Main Team by identifying weaknesses in their discussion and debating their points.
+1. 3人のメンバーからなるメインチーム: エージェントA、エージェントB、エージェントC
+- 立場: 命題に反対;
+- 目的: 議論し協力して、命題を効果的に反論するための包括的な論理的フローを概説する提案をブレインストーミングし開発する。
+- チームメンバーの具体的なペルソナと主張:
+	- エージェントA: persona_a;
+	- エージェントB: persona_b; 
+	- エージェントC: persona_c;
 
 
-## Task: 
-Summarize and distill the discussion into a plan that outlines the overall idea of the discussion, which will be used for generating a counterargument.
+2. 批評者
+- 立場: 命題を支持;
+- 目的: メインチームの議論の弱点を特定し、彼らの論点を議論することで、メインチームに挑戦する。
 
-- The plan should be abstract and concise, containing up to three main points, each of which can be supported by sub-points. An optional acknowledgment point may also be included.
-- The plan must strictly adhere to the ideas developed by the Main Team during the discussion.
+
+## タスク: 
+議論を要約し、反論を生成するために使用される議論の全体的なアイデアを概説する計画に抽出します。
+
+- 計画は抽象的で簡潔であり、最大3つの主要なポイントを含み、各ポイントはサブポイントでサポートできます。オプションの承認ポイントも含めることができます。
+- 計画は、議論中にメインチームによって開発されたアイデアに厳密に従う必要があります。
 
 -------
-- Proposition: {input_proposition}
+- 命題: {input_proposition}
 
-- Discussion Process:
+- 議論プロセス:
 {discussion_process}
 
 -------
 
-Now, generate the final plan given the proposition:`;
+では、命題が与えられた場合の最終計画を生成してください:`;
 
-export const SURFACE_GENERATION_STEP2_PROMPT = `## Proposition: {proposition}
+export const SURFACE_GENERATION_STEP2_PROMPT = `## 命題: {proposition}
 
-## Plan: 
+## 計画: 
 {plan}
 
 ------------
 
-## Task:
-Write a coherent, persuasive and well-structured counterargumentative article to refute the proposition based on the plan. You do not need to include section title in the counterargument.
+## タスク:
+計画に基づいて命題を反論するための、一貫性があり、説得力があり、構造化された反論記事を書いてください。反論にセクションタイトルを含める必要はありません。
 
-Counterargument:`;
+反論:`;
+

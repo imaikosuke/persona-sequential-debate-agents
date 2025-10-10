@@ -21,11 +21,24 @@ export function extractPersonas(output: string): Persona[] {
   if (text.startsWith("```json")) {
     text = text.replace("```json", "");
   }
+  if (text.startsWith("```")) {
+    text = text.replace("```", "");
+  }
   if (text.endsWith("```")) {
     text = text.replace(/```$/, "");
   }
 
-  // Replace newlines and multiple spaces with single space
+  // Remove any leading/trailing array or object brackets that might wrap the output
+  text = text.replace(/^\s*\{\s*\[/, "[").replace(/\]\s*\}\s*$/, "]");
+  text = text.replace(/^\s*\[/, "").replace(/\]\s*$/, "");
+
+  // Try line-by-line parsing first (preferred method for JSON Lines format)
+  const lineByLineResult = extractPersonasLineByLine(text);
+  if (lineByLineResult.length > 0) {
+    return lineByLineResult;
+  }
+
+  // Fallback: Replace newlines and multiple spaces with single space
   text = text.replace(/\s+/g, " ").trim();
 
   // Split by '} {' pattern to separate JSON objects
@@ -73,8 +86,27 @@ export function extractPersonasLineByLine(output: string): Persona[] {
 
   for (let line of lines) {
     try {
-      line = line.trim().replace(/[,.]$/, ""); // Remove trailing comma or period
+      line = line.trim();
+
+      // Skip empty lines
+      if (!line) continue;
+
+      // Skip lines that are just brackets
+      if (line === "{" || line === "}" || line === "[" || line === "]") continue;
+
+      // Remove trailing comma or period
+      line = line.replace(/[,.]$/, "");
+
+      // Remove leading/trailing array brackets if present
+      line = line.replace(/^\[/, "").replace(/\]$/, "");
+
       const parsed = JSON.parse(line) as Persona;
+
+      // Validate required fields
+      if (typeof parsed.agent_id !== "number" || !parsed.description || !parsed.claim) {
+        console.debug(`Invalid persona object: ${line}`);
+        continue;
+      }
 
       // Clean up description
       if (parsed.description) {
@@ -82,7 +114,7 @@ export function extractPersonasLineByLine(output: string): Persona[] {
       }
 
       personaList.push(parsed);
-    } catch {
+    } catch (error) {
       console.debug(`Failed to parse line: ${line}`);
       // Continue to next line
     }
