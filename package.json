@@ -40,6 +40,7 @@
     "@mastra/libsql": "^0.15.1",
     "@mastra/loggers": "^0.10.15",
     "@mastra/memory": "^0.15.5",
+    "ai": "^4.0.42",
     "zod": "^3.25.76"
   },
   "devDependencies": {
