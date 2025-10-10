@@ -114,7 +114,7 @@ export function extractPersonasLineByLine(output: string): Persona[] {
       }
 
       personaList.push(parsed);
-    } catch (error) {
+    } catch {
       console.debug(`Failed to parse line: ${line}`);
       // Continue to next line
     }

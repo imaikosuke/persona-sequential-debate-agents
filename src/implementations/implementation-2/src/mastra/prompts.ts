@@ -137,4 +137,3 @@ export const SURFACE_GENERATION_STEP2_PROMPT = `## 命題: {proposition}
 計画に基づいて命題を反論するための、一貫性があり、説得力があり、構造化された反論記事を書いてください。反論にセクションタイトルを含める必要はありません。
 
 反論:`;
-
