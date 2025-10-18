@@ -93,7 +93,6 @@ interface StanceAnalysis {
 }
 ```
 
-
 ## 実装ファイル構成
 
 ```
