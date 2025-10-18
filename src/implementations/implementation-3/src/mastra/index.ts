@@ -1,19 +1,23 @@
-import { Mastra } from "@mastra/core/mastra";
-import { LibSQLStore } from "@mastra/libsql";
-import { PinoLogger } from "@mastra/loggers";
+/**
+ * Implementation 3: Mastraインスタンス
+ * 単一LLM × 逐次討論（Self-Deliberative Agent）
+ */
 
-import { weatherAgent } from "./agents/weather-agent";
-import { weatherWorkflow } from "./workflows/weather-workflow";
+import { Mastra } from "@mastra/core";
 
+import { deliberativeAgent, executorAgent, judgeAgent } from "./agents";
+import { argumentationWorkflow } from "./workflows";
+
+/**
+ * Mastraインスタンスの作成
+ */
 export const mastra = new Mastra({
-  workflows: { weatherWorkflow },
-  agents: { weatherAgent },
-  storage: new LibSQLStore({
-    // stores telemetry, evals, ... into memory storage, if it needs to persist, change to file:../mastra.db
-    url: ":memory:",
-  }),
-  logger: new PinoLogger({
-    name: "Mastra",
-    level: "info",
-  }),
+  agents: {
+    deliberativeAgent,
+    executorAgent,
+    judgeAgent,
+  },
+  workflows: {
+    argumentationWorkflow,
+  },
 });
