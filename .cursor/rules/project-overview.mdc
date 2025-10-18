@@ -1,0 +1,130 @@
+---
+alwaysApply: true
+---
+
+# プロジェクト概要
+
+このプロジェクトは、Mastraを使用したAIエージェントによる論証システムの研究実装です。
+
+## 基本情報
+
+- **プロジェクト名**: Persona Sequential Debate Agents
+- **目的**: LLMエージェントの議論能力と論証構築能力の検証
+- **フレームワーク**: Mastra (AIエージェント・ワークフローフレームワーク)
+- **言語**: TypeScript
+- **パッケージマネージャー**: pnpm (workspace構成)
+- **Node.js**: v22.0.0以上
+- **モジュールシステム**: ESM (`"type": "module"`)
+
+## プロジェクト構造
+
+```
+src/implementations/
+├── implementation-1/  # One-shot論証生成
+├── implementation-2/  # ペルソナベース固定ワークフロー
+├── implementation-3/  # 自律的逐次討論（Self-Deliberative Agent）
+└── implementation-4/  # ペルソナ多様性と自律的逐次討論の組み合わせ
+```
+
+## 技術スタック
+
+### 主要依存関係
+
+- **@mastra/core** (^0.20.0): Mastraの中核パッケージ
+- **@mastra/memory** (^0.15.5): メモリ機能
+- **@mastra/libsql** (^0.15.1): データベース統合
+- **@mastra/loggers** (^0.10.15): ロギング機能
+- **@ai-sdk/openai** (^1.3.24): OpenAI統合
+- **ai** (^4.0.42): AI SDK
+- **zod** (^3.25.76): スキーマバリデーション
+
+### 開発ツール
+
+- **TypeScript** (^5.9.3): 型安全なコード
+- **ESLint** (^9.37.0): リンティング
+  - typescript-eslint
+  - eslint-plugin-unicorn
+  - eslint-plugin-promise
+  - eslint-plugin-n
+  - eslint-plugin-simple-import-sort
+- **Prettier** (^3.6.2): コードフォーマット
+  - prettier-plugin-packagejson
+- **mastra** (^0.14.0): MastraCLI
+
+## MCP (Model Context Protocol)
+
+プロジェクトはMastraのMCPサーバーを使用しています：
+
+```json
+{
+  "mcpServers": {
+    "mastra": {
+      "command": "npx",
+      "args": ["-y", "@mastra/mcp-docs-server"]
+    }
+  }
+}
+```
+# プロジェクト概要
+
+このプロジェクトは、Mastraを使用したAIエージェントによる論証システムの研究実装です。
+
+## 基本情報
+
+- **プロジェクト名**: Persona Sequential Debate Agents
+- **目的**: LLMエージェントの議論能力と論証構築能力の検証
+- **フレームワーク**: Mastra (AIエージェント・ワークフローフレームワーク)
+- **言語**: TypeScript
+- **パッケージマネージャー**: pnpm (workspace構成)
+- **Node.js**: v22.0.0以上
+- **モジュールシステム**: ESM (`"type": "module"`)
+
+## プロジェクト構造
+
+```
+src/implementations/
+├── implementation-1/  # One-shot論証生成
+├── implementation-2/  # ペルソナベース固定ワークフロー
+├── implementation-3/  # 自律的逐次討論（Self-Deliberative Agent）
+└── implementation-4/  # ペルソナ多様性と自律的逐次討論の組み合わせ
+```
+
+## 技術スタック
+
+### 主要依存関係
+
+- **@mastra/core** (^0.20.0): Mastraの中核パッケージ
+- **@mastra/memory** (^0.15.5): メモリ機能
+- **@mastra/libsql** (^0.15.1): データベース統合
+- **@mastra/loggers** (^0.10.15): ロギング機能
+- **@ai-sdk/openai** (^1.3.24): OpenAI統合
+- **ai** (^4.0.42): AI SDK
+- **zod** (^3.25.76): スキーマバリデーション
+
+### 開発ツール
+
+- **TypeScript** (^5.9.3): 型安全なコード
+- **ESLint** (^9.37.0): リンティング
+  - typescript-eslint
+  - eslint-plugin-unicorn
+  - eslint-plugin-promise
+  - eslint-plugin-n
+  - eslint-plugin-simple-import-sort
+- **Prettier** (^3.6.2): コードフォーマット
+  - prettier-plugin-packagejson
+- **mastra** (^0.14.0): MastraCLI
+
+## MCP (Model Context Protocol)
+
+プロジェクトはMastraのMCPサーバーを使用しています：
+
+```json
+{
+  "mcpServers": {
+    "mastra": {
+      "command": "npx",
+      "args": ["-y", "@mastra/mcp-docs-server"]
+    }
+  }
+}
+```
