@@ -1,4 +1,6 @@
 output.txt
+final-output.json
+final-output.md
 node_modules
 dist
 .mastra
