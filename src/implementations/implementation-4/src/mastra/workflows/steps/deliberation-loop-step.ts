@@ -2,6 +2,7 @@ import { createStep } from "@mastra/core/workflows";
 import { z } from "zod";
 
 import { selectDialogueActWithPersona } from "../../agents/deliberative-agent";
+import { generateFinalDocument } from "../../agents/final-writer-agent";
 import { evaluateDiscussionPanel } from "../../agents/judge-panel-agent";
 import { executeDialogueActWithPersona } from "../../agents/multi-executor-agent";
 import type { MultiPersonaBlackboard } from "../../types";
@@ -106,11 +107,53 @@ export const deliberationLoopStep = createStep({
       const conv = checkConvergence(blackboard, maxSteps);
       if (conv.shouldFinalize) {
         console.log(`\n収束: ${conv.reason}`);
+
+        // 最終文書を生成（確実に生成する）
+        console.log("\n最終文書を生成中...");
+        if (!blackboard.writepad.finalDraft) {
+          // FINALIZEアクションを試行
+          const finalDecision = await selectDialogueActWithPersona(blackboard);
+          if (
+            finalDecision &&
+            finalDecision.dialogueAct === DialogueAct.FINALIZE &&
+            finalDecision.selectedPersonaId
+          ) {
+            const finalPersona = blackboard.personas.find(
+              p => p.id === finalDecision.selectedPersonaId,
+            );
+            if (finalPersona) {
+              const finalExecution = await executeDialogueActWithPersona(
+                DialogueAct.FINALIZE,
+                finalPersona,
+                blackboard,
+              );
+              if (finalExecution && finalExecution.finalDocument) {
+                blackboard = updateBlackboard(blackboard, finalExecution);
+              }
+            }
+          }
+
+          // FINALIZEアクションが生成されなかった場合、またはfinalDocumentがない場合、LLMで最終文書を生成
+          if (!blackboard.writepad.finalDraft) {
+            console.log("FINALIZEアクションが生成されなかったため、LLMで最終文書を生成します...");
+            const finalDocument = await generateFinalDocument(blackboard);
+            blackboard.writepad.finalDraft = finalDocument;
+          }
+        }
         shouldContinue = false;
         break;
       }
 
       if (decision.dialogueAct === DialogueAct.FINALIZE || decision.shouldFinalize) {
+        // FINALIZEアクションが実行された場合、最終文書を確認
+        if (execution.finalDocument) {
+          blackboard.writepad.finalDraft = execution.finalDocument;
+        } else if (!blackboard.writepad.finalDraft) {
+          // finalDocumentがない場合、LLMで最終文書を生成
+          console.log("\n最終文書を生成中...");
+          const finalDocument = await generateFinalDocument(blackboard);
+          blackboard.writepad.finalDraft = finalDocument;
+        }
         shouldContinue = false;
         break;
       }
@@ -120,6 +163,45 @@ export const deliberationLoopStep = createStep({
       blackboard.meta.stepCount >= maxSteps
         ? "最大ステップ数に達しました"
         : "収束条件を満たして終了しました";
+
+    // 強制終了時にも最終文書を生成する
+    if (blackboard.meta.stepCount >= maxSteps && !blackboard.writepad.finalDraft) {
+      console.log("\n最大ステップ数に達したため、最終文書を生成します...");
+      const finalDecision = await selectDialogueActWithPersona(blackboard);
+      if (
+        finalDecision &&
+        finalDecision.dialogueAct === DialogueAct.FINALIZE &&
+        finalDecision.selectedPersonaId
+      ) {
+        const finalPersona = blackboard.personas.find(
+          p => p.id === finalDecision.selectedPersonaId,
+        );
+        if (finalPersona) {
+          const finalExecution = await executeDialogueActWithPersona(
+            DialogueAct.FINALIZE,
+            finalPersona,
+            blackboard,
+          );
+          if (finalExecution && finalExecution.finalDocument) {
+            blackboard = updateBlackboard(blackboard, finalExecution);
+          }
+        }
+      }
+
+      // FINALIZEアクションが生成されなかった場合、LLMで最終文書を生成
+      if (!blackboard.writepad.finalDraft) {
+        console.log("FINALIZEアクションが生成されなかったため、LLMで最終文書を生成します...");
+        const finalDocument = await generateFinalDocument(blackboard);
+        blackboard.writepad.finalDraft = finalDocument;
+      }
+    }
+
+    console.log(`\n=== 討論終了 ===`);
+    console.log(`ステータス: ${finalStatus}`);
+    console.log(`ステップ数: ${blackboard.meta.stepCount}`);
+    console.log(`主張数: ${blackboard.claims.length}`);
+    console.log(`反論数: ${blackboard.attacks.length}`);
+    console.log(`未解決の反論: ${blackboard.attacks.filter(a => !a.resolved).length}件`);
 
     return { blackboard, finalStatus };
   },
