@@ -50,35 +50,21 @@ export const deliberationLoopStep = createStep({
           ? DialogueAct.CRITIQUE
           : decision.dialogueAct;
 
-      // ペルソナ選択（直近のペルソナを回避、役割に基づく優先）
-      const pickByRole = (preferredRoles: string[]) => {
+      // ペルソナ選択（直近のペルソナを回避）
+      // Implementation-2と同様にロールに依存しない
+      const pickNotLast = () => {
         const lastId = blackboard.meta.lastSelectedPersonaId;
-        const roleFirst = blackboard.personas.find(
-          p => preferredRoles.includes(String(p.role)) && p.id !== lastId,
-        );
-        if (roleFirst) return roleFirst;
-        const roleAny = blackboard.personas.find(p => preferredRoles.includes(String(p.role)));
-        if (roleAny) return roleAny;
-        // 回避のみ適用
         const notLast = blackboard.personas.find(p => p.id !== lastId);
         return notLast ?? blackboard.personas[0];
       };
 
       let persona = blackboard.personas.find(p => p.id === decision.selectedPersonaId);
       if (!persona || persona.id === blackboard.meta.lastSelectedPersonaId) {
-        if (chosenAct === DialogueAct.CRITIQUE || chosenAct === DialogueAct.CHALLENGE) {
-          persona = pickByRole(["critic"]);
-        } else if (chosenAct === DialogueAct.FACT_CHECK) {
-          persona = pickByRole(["expert"]);
-        } else if (chosenAct === DialogueAct.SYNTHESIZE || chosenAct === DialogueAct.REFRAME) {
-          persona = pickByRole(["synthesizer"]);
-        } else {
-          persona = pickByRole(["advocate", "expert"]);
-        }
+        persona = pickNotLast();
       }
 
       console.log(
-        `アクション: ${chosenAct} / ペルソナ: ${persona.name} (${persona.role})${
+        `アクション: ${chosenAct} / ペルソナ: ${persona.name}${
           chosenAct !== decision.dialogueAct ? " [forced]" : ""
         }`,
       );

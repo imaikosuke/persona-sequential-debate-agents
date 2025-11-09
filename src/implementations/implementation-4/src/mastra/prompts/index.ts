@@ -1,11 +1,45 @@
 import type { MultiPersonaBlackboard } from "../types";
 import { DialogueAct } from "../types";
 
+/**
+ * Persona Creation and Selection Prompts
+ * Based on implementation-2 (先行研究に基づく実装)
+ */
+export const PERSONA_CREATION_PROMPT = `論争的なトピックに関する命題: ##input_proposition
+
+
+あなたのタスクは、6から10の討論エージェントのプールを作成することです。各エージェントは、与えられた命題を異なる視点から反論します。各エージェントは、命題に関連する独自の視点を表す必要があります。
+
+各エージェントに対して、一文でユニークなペルソナの説明を割り当て、提案を反論するための特定の角度に焦点を当てた対応する主張を付けてください。各エージェントの視点が明確で命題に関連していることを確認してください。多様性と公平性を促進するために、エージェントはさまざまなコミュニティや視点を反映する必要があります。
+
+重要: 出力は各行が独立したJSONオブジェクトである必要があります。配列やオブジェクトでラップしないでください。余分な文字（中括弧、角括弧、カンマなど）を追加しないでください。
+
+出力形式（各行は有効なJSONオブジェクト）:
+{"agent_id": 0, "description": "Agent_0の説明", "claim": "Agent_0の主張"}
+{"agent_id": 1, "description": "Agent_1の説明", "claim": "Agent_1の主張"}
+{"agent_id": 2, "description": "Agent_2の説明", "claim": "Agent_2の主張"}`;
+
+export const PERSONA_SELECTION_PROMPT = `命題: ##input_proposition
+
+与えられた命題を反論する説得力のある反論を共同で策定するために、3人のエージェントのチームを構築する必要があります。
+以下の候補者が与えられており、各候補者は手元のトピックに関連する異なる視点を提供するユニークなペルソナを持っています。タスクを達成するために一緒に強力なチームを形成できると思う3人のエージェントを選択する必要があります。
+選択を行う際は、バランスの取れた公平な議論を確保するために多様性の重要性を考慮してください。各選択について、候補者を選択した理由を述べてください。
+
+## 候補者リスト:
+###candidate_list
+
+重要: 出力は各行が独立したJSONオブジェクトである必要があります。配列やオブジェクトでラップしないでください。余分な文字を追加しないでください。正確に3人の候補者を選択してください。
+
+出力形式（各行は有効なJSONオブジェクト）:
+{"agent_id": 0, "description": "Agent_0の説明", "claim": "Agent_0の主張", "reason": "選択理由"}
+{"agent_id": 1, "description": "Agent_1の説明", "claim": "Agent_1の主張", "reason": "選択理由"}
+{"agent_id": 2, "description": "Agent_2の説明", "claim": "Agent_2の主張", "reason": "選択理由"}`;
+
 function formatPersonas(blackboard: MultiPersonaBlackboard): string {
   return blackboard.personas
     .map(
       p =>
-        `- [${p.id}] ${p.name} (${p.role})\n  expertise: ${p.expertise.join(", ")}\n  values: ${p.values.join(", ")}\n  style: ${p.thinkingStyle}/${p.communicationStyle}`,
+        `- [${p.id}] ${p.name}\n  expertise: ${p.expertise.join(", ")}\n  values: ${p.values.join(", ")}\n  style: ${p.thinkingStyle}/${p.communicationStyle}`,
     )
     .join("\n");
 }
@@ -131,7 +165,6 @@ ${dialogueAct}
 ## 担当ペルソナ
 - id: ${persona.id}
 - name: ${persona.name}
-- role: ${persona.role}
 - expertise: ${persona.expertise.join(", ")}
 - values: ${persona.values.join(", ")}
 - thinkingStyle: ${persona.thinkingStyle}

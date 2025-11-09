@@ -21,9 +21,9 @@ export function computeDiversityMetrics(blackboard: MultiPersonaBlackboard): Div
   const expertiseSpread = Math.min(1, expertiseSet.size / (personas.length * 3));
   const valueAlignment = Math.max(0, 1 - valuesSet.size / (personas.length * 2));
 
-  // 視点カバレッジ: 役割のバランスで近似
-  const roles = new Set(personas.map(p => p.role));
-  const perspectiveCoverage = Math.min(1, roles.size / 5);
+  // 視点カバレッジ: expertiseとvaluesの多様性から推定
+  // Implementation-2と同様にロールは持たないため、expertiseとvaluesの多様性で評価
+  const perspectiveCoverage = Math.min(1, (expertiseSpread + (1 - valueAlignment)) / 2);
 
   return { expertiseSpread, valueAlignment, perspectiveCoverage };
 }
