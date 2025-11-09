@@ -1,11 +1,11 @@
 /**
  * Implementation 3: Mastraインスタンス
- * 単一LLM × 逐次討論（Self-Deliberative Agent）
+ * 単一LLM × 逐次討論（Self-Deliberative Agent）- 簡略化版
  */
 
 import { Mastra } from "@mastra/core";
 
-import { deliberativeAgent, executorAgent, judgeAgent } from "./agents";
+import { debateAgent } from "./agents";
 import { argumentationWorkflow } from "./workflows";
 
 /**
@@ -13,9 +13,7 @@ import { argumentationWorkflow } from "./workflows";
  */
 export const mastra = new Mastra({
   agents: {
-    deliberativeAgent,
-    executorAgent,
-    judgeAgent,
+    debateAgent,
   },
   workflows: {
     argumentationWorkflow,

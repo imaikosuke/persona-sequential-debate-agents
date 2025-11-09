@@ -1,5 +1,6 @@
 ---
-alwaysApply: true
+description: helpful for Makefile
+alwaysApply: false
 ---
 
 # Makefileコマンド一覧
@@ -118,6 +119,7 @@ make lint-fix     # リント自動修正
 make format-fix   # フォーマット自動修正
 make typecheck    # 型チェック
 ```
+
 # Makefileコマンド一覧
 
 プロジェクトのルートディレクトリにある `Makefile` に定義されているコマンドです。

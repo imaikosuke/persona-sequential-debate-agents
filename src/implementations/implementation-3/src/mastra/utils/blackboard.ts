@@ -2,26 +2,17 @@
  * Implementation 3: ブラックボード操作ユーティリティ
  */
 
-import type { BlackboardState, Claim, ExecutionResult, StanceAnalysis } from "../types";
+import type { Attack, BlackboardState, Claim, DebateAction, StanceAnalysis } from "../types";
 
 /**
- * ブラックボードの初期化
+ * ブラックボードの初期化（簡略化版）
  */
 export function initializeBlackboard(topic: string, tokenBudget = 10000): BlackboardState {
   return {
     topic,
     claims: [],
     attacks: [],
-    questions: [],
-    plan: {
-      currentFocus: `トピック「${topic}」に対する初期の主張を構築する`,
-      nextSteps: ["トピックに関連する主要な主張を提案する", "主張の根拠を明確にする"],
-      avoidTopics: [],
-    },
-    writepad: {
-      outline: "",
-      sections: [],
-    },
+    writepad: {},
     meta: {
       stepCount: 0,
       tokenBudget,
@@ -32,11 +23,187 @@ export function initializeBlackboard(topic: string, tokenBudget = 10000): Blackb
 }
 
 /**
- * ブラックボードの更新
+ * 重複反論をチェック
+ */
+function checkDuplicateAttack(
+  newAttack: { fromClaimId: string; toClaimId: string; description: string },
+  existingAttacks: Attack[],
+): boolean {
+  return existingAttacks.some(
+    existing =>
+      existing.fromClaimId === newAttack.fromClaimId &&
+      existing.toClaimId === newAttack.toClaimId &&
+      // 説明文が非常に類似している場合も重複とみなす（簡易チェック）
+      (existing.description === newAttack.description ||
+        existing.description.includes(newAttack.description.substring(0, 20)) ||
+        newAttack.description.includes(existing.description.substring(0, 20))),
+  );
+}
+
+/**
+ * 反論解決メカニズム
+ * 新しい反論や主張が既存の反論を解決するかチェック
+ */
+function resolveAttacks(
+  blackboard: BlackboardState,
+  newClaims: Claim[],
+  newAttacks: Attack[],
+): BlackboardState {
+  const updated = { ...blackboard, attacks: [...blackboard.attacks] };
+
+  // 新しい反論が既存の反論の fromClaimId を攻撃する場合、
+  // 元の反論を「反論された」とマーク（部分的に解決）
+  for (const newAttack of newAttacks) {
+    // 新しい反論が既存の反論の元主張（fromClaimId）を攻撃している場合
+    const attackedAttacks = updated.attacks.filter(
+      existing => existing.fromClaimId === newAttack.toClaimId && !existing.resolved,
+    );
+
+    for (const attackedAttack of attackedAttacks) {
+      // 反論の元主張が攻撃された場合、その反論を「反論された」とマーク
+      // これは完全な解決ではないが、議論が深まったことを示す
+      if (attackedAttack.severity === "minor") {
+        attackedAttack.resolved = true;
+      } else if (attackedAttack.severity === "major") {
+        // major の場合は、より積極的に解決済みにする
+        // 新しい反論が既存の反論の元主張を攻撃している場合、基本的に解決済みとみなす
+        attackedAttack.resolved = true;
+      }
+    }
+  }
+
+  // 新しい主張が既存の反論の論点を直接的に覆す場合、その反論を解決済みにする
+  // より多くのキーワードパターンを追加（改善版）
+  const resolutionPatterns = [
+    // 依存症・リスク関連
+    {
+      attack: ["依存症", "リスク", "依存"],
+      claim: ["依存症", "防ぐ", "軽減", "管理", "教育", "対策"],
+    },
+    // 集中力・学習関連
+    {
+      attack: ["集中力", "低下", "注意散漫"],
+      claim: ["集中力", "向上", "高める", "改善", "管理"],
+    },
+    // 健康・悪影響関連
+    {
+      attack: ["悪影響", "健康", "視力", "健康リスク"],
+      claim: ["悪影響", "軽減", "防ぐ", "管理", "教育", "対策", "リスク", "低減"],
+    },
+    // ネットいじめ・不適切コンテンツ関連
+    {
+      attack: ["ネットいじめ", "いじめ", "不適切", "コンテンツ", "危険"],
+      claim: ["ネットいじめ", "防ぐ", "軽減", "対策", "監視", "制限", "教育"],
+    },
+    // 学習効果関連
+    {
+      attack: ["学習", "効果", "低下", "妨げ"],
+      claim: ["学習", "効果", "向上", "高める", "改善"],
+    },
+    // 安全性・緊急時関連
+    {
+      attack: ["安全性", "安全", "危険", "リスク"],
+      claim: ["安全性", "向上", "確保", "保護", "監視"],
+    },
+    // アクセス制限・最新情報関連（新規追加）
+    {
+      attack: ["アクセス", "制限", "制約", "限界", "できない", "不可能"],
+      claim: ["アクセス", "可能", "提供", "利用", "利用可能", "利用できる"],
+    },
+    // 最新情報・最新技術関連（新規追加）
+    {
+      attack: ["最新", "情報", "技術", "アプリ", "最新の", "最新情報", "最新技術"],
+      claim: ["最新", "情報", "技術", "アプリ", "アクセス", "利用", "提供", "利用可能"],
+    },
+    // 代替手段・代替方法関連（新規追加）
+    {
+      attack: ["代替", "手段", "方法", "他の", "別の", "代替手段", "代替方法"],
+      claim: ["代替", "手段", "方法", "限界", "制限", "制約", "できない", "不可能", "不足"],
+    },
+    // 教育機会・学習機会関連（新規追加）
+    {
+      attack: ["教育", "機会", "学習", "機会", "逃す", "失う", "制限"],
+      claim: ["教育", "機会", "学習", "機会", "提供", "確保", "向上", "改善"],
+    },
+    // 必要性・必須性関連（新規追加）
+    {
+      attack: ["必要", "不要", "必須", "必須ではない", "必要ではない", "不要"],
+      claim: ["必要", "必須", "重要", "不可欠", "必要不可欠", "重要"],
+    },
+  ];
+
+  for (const newClaim of newClaims) {
+    const claimText = newClaim.text.toLowerCase();
+
+    // この新しい主張が既存の反論の論点を覆している可能性をチェック
+    for (const existingAttack of updated.attacks) {
+      if (existingAttack.resolved) continue;
+
+      const attackDescription = existingAttack.description.toLowerCase();
+
+      // 各パターンをチェック
+      for (const pattern of resolutionPatterns) {
+        const attackMatches = pattern.attack.some(keyword => attackDescription.includes(keyword));
+        const claimMatches = pattern.claim.some(keyword => claimText.includes(keyword));
+
+        if (attackMatches && claimMatches) {
+          // 新しい主張が反論の論点を覆している場合、その反論を解決済みにする
+          if (existingAttack.severity === "minor" || existingAttack.severity === "major") {
+            existingAttack.resolved = true;
+            break; // 1つのパターンにマッチしたら次の反論へ
+          }
+        }
+      }
+    }
+  }
+
+  return updated;
+}
+
+/**
+ * 信念度の動的更新
+ * 反論を受けた主張の信念度を下げ、再反論で守られた主張の信念度を上げる
+ */
+function updateConfidence(claim: Claim, attacks: Attack[], supports: Claim[]): number {
+  let confidence = claim.confidence;
+
+  // 初期の主張（最初の5件）には最低限の信念度を保証
+  const isInitialClaim = claim.createdAt <= 3;
+  const minConfidence = isInitialClaim ? 0.3 : 0.0;
+
+  // 未解決の重大な反論がある場合、信念度を下げる
+  // 反論の影響を段階的に減らす（最初の反論は-0.1、2つ目以降は-0.05）
+  const unresolvedMajorAttacks = attacks.filter(
+    a => !a.resolved && (a.severity === "critical" || a.severity === "major"),
+  );
+  if (unresolvedMajorAttacks.length > 0) {
+    // 最初の反論は-0.1、2つ目以降は-0.05
+    confidence -= 0.1 + (unresolvedMajorAttacks.length - 1) * 0.05;
+    // 最大で-0.3まで（3件以上の反論があっても、影響を制限）
+    confidence = Math.max(confidence, claim.confidence - 0.3);
+  }
+
+  // 未解決の軽微な反論がある場合、少し信念度を下げる
+  const unresolvedMinorAttacks = attacks.filter(a => !a.resolved && a.severity === "minor");
+  confidence -= unresolvedMinorAttacks.length * 0.03;
+
+  // 解決済みの反論がある場合、議論が深まったことを示すため、少し信念度を上げる
+  const resolvedAttacks = attacks.filter(a => a.resolved);
+  confidence += resolvedAttacks.length * 0.02;
+
+  // 支持する主張がある場合、信念度を上げる
+  confidence += supports.length * 0.05;
+
+  // 信念度を [minConfidence, 1.0] の範囲に制限
+  return Math.max(minConfidence, Math.min(1.0, confidence));
+}
+
+/**
+ * ブラックボードの更新（改善版）
  */
 export function updateBlackboard(
   blackboard: BlackboardState,
-  executionResult: ExecutionResult,
+  action: DebateAction,
   estimatedTokens = 500,
 ): BlackboardState {
   const updated: BlackboardState = {
@@ -49,86 +216,108 @@ export function updateBlackboard(
   };
 
   // 新しい主張を追加
-  if (executionResult.newClaims) {
-    const newClaimsWithTimestamp = executionResult.newClaims.map(claim => ({
-      ...claim,
-      createdAt: updated.meta.stepCount,
-      lastUpdated: updated.meta.stepCount,
-    }));
+  if (action.newClaims) {
+    // 既存の主張IDを取得
+    const existingClaimIds = new Set(updated.claims.map(c => c.id));
+
+    // 新しい主張に一意のIDを割り当て、テキストをクリーンアップ
+    let claimCounter = updated.claims.length + 1;
+    const newClaimsWithTimestamp = action.newClaims.map(claim => {
+      // IDが重複している場合、またはIDが指定されていない場合は自動生成
+      let claimId = claim.id;
+      if (!claimId || existingClaimIds.has(claimId)) {
+        do {
+          claimId = `c${claimCounter}`;
+          claimCounter++;
+        } while (existingClaimIds.has(claimId));
+        existingClaimIds.add(claimId);
+      }
+
+      // テキストから不要な文字列を削除（例: "(信念度: 0.70)"）
+      let cleanedText = claim.text;
+      cleanedText = cleanedText.replace(/\s*\(信念度:\s*[\d.]+\)\s*/g, "").trim();
+
+      return {
+        ...claim,
+        id: claimId,
+        text: cleanedText,
+        createdAt: updated.meta.stepCount,
+        lastUpdated: updated.meta.stepCount,
+      };
+    });
     updated.claims = [...updated.claims, ...newClaimsWithTimestamp];
   }
 
-  // 主張を更新
-  if (executionResult.updatedClaims) {
-    const updatedClaimMap = new Map(executionResult.updatedClaims.map(c => [c.id, c]));
-    updated.claims = updated.claims.map(claim => {
-      const updatedClaim = updatedClaimMap.get(claim.id);
-      return updatedClaim
-        ? { ...claim, ...updatedClaim, lastUpdated: updated.meta.stepCount }
-        : claim;
+  // 新しい攻撃を追加（重複チェック付き）
+  if (action.newAttacks) {
+    // 既存の攻撃IDを取得
+    const existingAttackIds = new Set(updated.attacks.map(a => a.id));
+
+    // 重複を除外
+    const uniqueNewAttacks = action.newAttacks.filter(
+      newAttack => !checkDuplicateAttack(newAttack, updated.attacks),
+    );
+
+    // 新しい攻撃に一意のIDを割り当て
+    let attackCounter = updated.attacks.length + 1;
+    const newAttacksWithDefaults = uniqueNewAttacks.map(attack => {
+      // IDが重複している場合、またはIDが指定されていない場合は自動生成
+      let attackId = attack.id;
+      if (!attackId || existingAttackIds.has(attackId)) {
+        do {
+          attackId = `a${attackCounter}`;
+          attackCounter++;
+        } while (existingAttackIds.has(attackId));
+        existingAttackIds.add(attackId);
+      }
+
+      return {
+        ...attack,
+        id: attackId,
+        resolved: false,
+      };
     });
-  }
-
-  // 新しい攻撃を追加
-  if (executionResult.newAttacks) {
-    const newAttacksWithDefaults = executionResult.newAttacks.map(attack => ({
-      ...attack,
-      resolved: false,
-    }));
     updated.attacks = [...updated.attacks, ...newAttacksWithDefaults];
+
+    // 反論解決メカニズムを実行
+    const resolved = resolveAttacks(updated, action.newClaims || [], newAttacksWithDefaults);
+    updated.attacks = resolved.attacks;
   }
 
-  // 攻撃を解決済みにする
-  if (executionResult.resolvedAttacks) {
-    const resolvedSet = new Set(executionResult.resolvedAttacks);
-    updated.attacks = updated.attacks.map(attack =>
-      resolvedSet.has(attack.id) ? { ...attack, resolved: true } : attack,
-    );
+  // 反論解決メカニズムを実行（新しい主張のみの場合）
+  if (action.newClaims && !action.newAttacks) {
+    const resolved = resolveAttacks(updated, action.newClaims, []);
+    updated.attacks = resolved.attacks;
   }
 
-  // 新しい質問を追加
-  if (executionResult.newQuestions) {
-    const newQuestionsWithDefaults = executionResult.newQuestions.map(question => ({
-      ...question,
-      resolved: false,
-    }));
-    updated.questions = [...updated.questions, ...newQuestionsWithDefaults];
-  }
+  // 信念度を動的に更新
+  updated.claims = updated.claims.map(claim => {
+    // この主張を攻撃する反論を取得
+    const attacksOnClaim = updated.attacks.filter(a => a.toClaimId === claim.id);
 
-  // 質問を解決済みにする
-  if (executionResult.resolvedQuestions) {
-    const resolvedSet = new Set(executionResult.resolvedQuestions);
-    updated.questions = updated.questions.map(question =>
-      resolvedSet.has(question.id) ? { ...question, resolved: true } : question,
-    );
-  }
+    // この主張を支持する主張を取得（将来的に実装可能）
+    const supportsClaim: Claim[] = [];
 
-  // 計画を更新
-  if (executionResult.updatedPlan) {
-    updated.plan = {
-      ...updated.plan,
-      ...executionResult.updatedPlan,
+    // 信念度を更新
+    const newConfidence = updateConfidence(claim, attacksOnClaim, supportsClaim);
+
+    return {
+      ...claim,
+      confidence: newConfidence,
+      lastUpdated: updated.meta.stepCount,
     };
-  }
-
-  // 執筆パッドを更新
-  if (executionResult.updatedWritepad) {
-    updated.writepad = {
-      ...updated.writepad,
-      ...executionResult.updatedWritepad,
-    };
-  }
+  });
 
   // 最終文書を設定
-  if (executionResult.finalDocument) {
-    updated.writepad.finalDraft = executionResult.finalDocument;
+  if (action.finalDocument) {
+    updated.writepad.finalDraft = action.finalDocument;
   }
 
   return updated;
 }
 
 /**
- * 主張の平均信念度を計算
+ * 主張の平均信念度を計算（削除予定 - 使用されていない）
  */
 export function calculateAverageConfidence(claims: Claim[]): number {
   if (claims.length === 0) return 0;
@@ -137,96 +326,85 @@ export function calculateAverageConfidence(claims: Claim[]): number {
 }
 
 /**
- * 未解決の致命的攻撃数を計算
+ * 未解決の致命的攻撃数を計算（削除予定 - 使用されていない）
  */
 export function countCriticalUnresolvedAttacks(blackboard: BlackboardState): number {
   return blackboard.attacks.filter(a => !a.resolved && a.severity === "critical").length;
 }
 
 /**
- * 収束条件のチェック
+ * 収束条件のチェック（厳格化版）
  */
 export function checkConvergence(
   blackboard: BlackboardState,
-  thresholds = {
-    minConfidence: 0.7, // 0.75 → 0.70: より多くの議論を促す
-    maxCriticalAttacks: 0,
-    minSteps: 5, // 3 → 5: より多くのステップを要求
-    maxSteps: 20,
-    minClaims: 5, // 新規: 最小主張数を要求
-    minDiversity: 0.4, // 新規: 最小多様性スコアを要求
-    minAttacks: 1, // 新規: 最小攻撃数を要求（批判的検討を促進）
-  },
+  maxSteps = 10,
 ): {
   shouldFinalize: boolean;
   reason: string;
 } {
   // 最大ステップ数に達した場合は強制終了
-  if (blackboard.meta.stepCount >= thresholds.maxSteps) {
+  if (blackboard.meta.stepCount >= maxSteps) {
     return {
       shouldFinalize: true,
       reason: "最大ステップ数に達しました",
     };
   }
 
-  // 最小ステップ数未満の場合は継続
-  if (blackboard.meta.stepCount < thresholds.minSteps) {
+  // 最小条件チェック（厳格化）
+  const minClaims = 5;
+  const minAttacks = 3; // 1から3に引き上げ
+  const minSteps = 4; // 最低ステップ数を4に引き上げ（議論の深さを確保）
+
+  // 最低ステップ数チェック（逐次討論の効果を確保）
+  if (blackboard.meta.stepCount < minSteps) {
     return {
       shouldFinalize: false,
-      reason: "まだ議論を続ける必要があります",
+      reason: `最低ステップ数に達していません（現在: ${blackboard.meta.stepCount}, 最低: ${minSteps}）`,
     };
   }
 
-  // 主張がない場合は継続
-  if (blackboard.claims.length === 0) {
+  if (blackboard.claims.length < minClaims) {
     return {
       shouldFinalize: false,
-      reason: "まだ主張が生成されていません",
+      reason: `主張数が不足しています（現在: ${blackboard.claims.length}, 最小: ${minClaims}）`,
     };
   }
 
-  // 最小主張数未満の場合は継続
-  if (blackboard.claims.length < thresholds.minClaims) {
+  if (blackboard.attacks.length < minAttacks) {
     return {
       shouldFinalize: false,
-      reason: `主張数が不足しています（現在: ${blackboard.claims.length}, 最小: ${thresholds.minClaims}）`,
+      reason: `反論が不足しています（現在: ${blackboard.attacks.length}, 最小: ${minAttacks}）`,
     };
   }
 
-  const avgConfidence = calculateAverageConfidence(blackboard.claims);
-  const criticalAttacks = countCriticalUnresolvedAttacks(blackboard);
   const stanceAnalysis = analyzeArgumentStances(blackboard);
 
-  // 多様性が不足している場合は継続
-  if (stanceAnalysis.diversityScore < thresholds.minDiversity) {
+  // 多様性チェック（賛成・反対の両方が必要）
+  if (stanceAnalysis.proCount === 0 || stanceAnalysis.conCount === 0) {
     return {
       shouldFinalize: false,
-      reason: `議論の多様性が不足しています（現在: ${stanceAnalysis.diversityScore.toFixed(2)}, 最小: ${thresholds.minDiversity}）。賛成: ${stanceAnalysis.proCount}件, 反対: ${stanceAnalysis.conCount}件`,
+      reason: `多様な視点が必要です（賛成: ${stanceAnalysis.proCount}件, 反対: ${stanceAnalysis.conCount}件）`,
     };
   }
 
-  // 攻撃（批判的検討）が不足している場合は継続
-  if (blackboard.attacks.length < thresholds.minAttacks) {
+  // 未解決の重要な反論をチェック
+  const unresolvedMajorAttacks = blackboard.attacks.filter(
+    a => !a.resolved && (a.severity === "critical" || a.severity === "major"),
+  ).length;
+
+  // 未解決の重要な反論が多すぎる場合は継続
+  // 閾値を2件から5件に緩和（反論解決メカニズムの改善により、より多くの反論が解決されることを期待）
+  if (unresolvedMajorAttacks > 5) {
     return {
       shouldFinalize: false,
-      reason: `批判的検討が不足しています（攻撃数: ${blackboard.attacks.length}, 最小: ${thresholds.minAttacks}）`,
+      reason: `未解決の重要な反論が多すぎます（${unresolvedMajorAttacks}件）。これらへの再反論が必要です。`,
     };
   }
 
-  // 収束条件: 高い信念度 & 致命的攻撃なし & 多様性あり & 批判的検討済み
-  if (
-    avgConfidence >= thresholds.minConfidence &&
-    criticalAttacks <= thresholds.maxCriticalAttacks
-  ) {
-    return {
-      shouldFinalize: true,
-      reason: `収束条件を満たしました（平均信念度: ${avgConfidence.toFixed(2)}, 主張数: ${blackboard.claims.length}, 致命的攻撃: ${criticalAttacks}, 多様性: ${stanceAnalysis.diversityScore.toFixed(2)}）`,
-    };
-  }
-
+  // 収束条件を満たしている
   return {
-    shouldFinalize: false,
-    reason: `まだ収束していません（平均信念度: ${avgConfidence.toFixed(2)}, 主張数: ${blackboard.claims.length}, 致命的攻撃: ${criticalAttacks}, 多様性: ${stanceAnalysis.diversityScore.toFixed(2)}）`,
+    shouldFinalize: true,
+    reason: `収束条件を満たしました（主張数: ${blackboard.claims.length}, 反論数: ${blackboard.attacks.length}, ステップ数: ${blackboard.meta.stepCount}）`,
   };
 }
 

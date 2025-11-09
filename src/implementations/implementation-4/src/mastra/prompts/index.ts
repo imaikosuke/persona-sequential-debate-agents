@@ -36,6 +36,14 @@ export function buildPersonaDeliberationPrompt(blackboard: MultiPersonaBlackboar
   const personasText = formatPersonas(blackboard);
   const claimsText = formatClaims(blackboard);
   const attacksText = formatAttacks(blackboard);
+  const lastPersonaInfo = blackboard.meta.lastSelectedPersonaId
+    ? `- 直前に使用したペルソナID: ${blackboard.meta.lastSelectedPersonaId}\n- 次は同一IDの連続選択は避けること`
+    : `- 直前に使用したペルソナID: （なし）`;
+  const critiqueHint =
+    blackboard.attacks.length < 2 ||
+    (blackboard.meta.stepCount < 5 && blackboard.attacks.length < 3)
+      ? `- 現在、攻撃(反駁)が不足しています。次は critique か fact_check を優先して選択してください。`
+      : `- 攻撃は一定数存在します。状況に応じて最適な行為を選択してください。`;
 
   return `
 ## 現在の議論状態（マルチペルソナ）
@@ -77,6 +85,8 @@ ${
 ### メタ
 - ステップ数: ${blackboard.meta.stepCount}
 - 合意レベル（暫定）: ${blackboard.consensusLevel.toFixed(2)}
+${lastPersonaInfo}
+${critiqueHint}
 
 ## タスク
 - 次に取るべき対話行為を選択してください。
@@ -142,6 +152,8 @@ ${formatAttacks(blackboard)}
 - 常にJSON形式
 - 新規主張には { personaContext: { personaId } } を含める
 - 必要に応じて crossReferences を生成する（support/challenge/clarification）
+- critique/challenge の場合: newAttacks を最低1件以上必ず生成し、既存の claimId を toClaimId に指定すること（severity と description を明記）
+- fact_check の場合: 事実確認の要点を newClaims に反映し、可能なら crossReferences を追加すること
 出力フォーマット（JSONの例）:
 \`\`\`json
 {

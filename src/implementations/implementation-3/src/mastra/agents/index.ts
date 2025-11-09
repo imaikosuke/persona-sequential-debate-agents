@@ -1,7 +1,5 @@
 /**
- * Implementation 3: エージェントのエクスポート
+ * Implementation 3: エージェントのエクスポート（簡略化版）
  */
 
-export * from "./deliberative-agent";
-export * from "./executor-agent";
-export * from "./judge-agent";
+export * from "./debate-agent";

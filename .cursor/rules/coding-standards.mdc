@@ -1,5 +1,5 @@
 ---
-globs: *.tsx,*.ts
+globs: *.ts
 alwaysApply: false
 ---
 # コーディング規約とベストプラクティス

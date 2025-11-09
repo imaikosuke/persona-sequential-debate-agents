@@ -6,113 +6,54 @@ alwaysApply: true
 
 このプロジェクトは、Mastraを使用したAIエージェントによる論証システムの研究実装です。
 
-## 基本情報
+## 研究の背景と目的
 
-- **プロジェクト名**: Persona Sequential Debate Agents
-- **目的**: LLMエージェントの議論能力と論証構築能力の検証
-- **フレームワーク**: Mastra (AIエージェント・ワークフローフレームワーク)
-- **言語**: TypeScript
-- **パッケージマネージャー**: pnpm (workspace構成)
-- **Node.js**: v22.0.0以上
-- **モジュールシステム**: ESM (`"type": "module"`)
+このプロジェクトは、CS専攻の学部生による研究実装です。**マルチエージェントによって質の高い論証文を生成できるかどうかを検証する**ことが研究の目的です。
 
-## プロジェクト構造
+### 検証する4つの実装パターン
 
-```
-src/implementations/
-├── implementation-1/  # One-shot論証生成
-├── implementation-2/  # ペルソナベース固定ワークフロー
-├── implementation-3/  # 自律的逐次討論（Self-Deliberative Agent）
-└── implementation-4/  # ペルソナ多様性と自律的逐次討論の組み合わせ
-```
+以下の4つの組み合わせをそれぞれ検証し、比較します：
 
-## 技術スタック
+1. **Implementation 1**: 単一LLMと一括生成
+2. **Implementation 2**: ペルソナ多様性と一括生成
+3. **Implementation 3**: 単一LLMと逐次討論
+4. **Implementation 4**: ペルソナ多様性と逐次討論
 
-### 主要依存関係
+### 研究の仮説と課題
 
-- **@mastra/core** (^0.20.0): Mastraの中核パッケージ
-- **@mastra/memory** (^0.15.5): メモリ機能
-- **@mastra/libsql** (^0.15.1): データベース統合
-- **@mastra/loggers** (^0.10.15): ロギング機能
-- **@ai-sdk/openai** (^1.3.24): OpenAI統合
-- **ai** (^4.0.42): AI SDK
-- **zod** (^3.25.76): スキーマバリデーション
+#### 課題1: 単一LLMの限界
 
-### 開発ツール
+- **問題**: 単一LLMでは偏ったバイアスがかかり、多様性に欠けるのではないか
+- **検証**: Implementation 1と3で単一LLMの影響を検証
 
-- **TypeScript** (^5.9.3): 型安全なコード
-- **ESLint** (^9.37.0): リンティング
-  - typescript-eslint
-  - eslint-plugin-unicorn
-  - eslint-plugin-promise
-  - eslint-plugin-n
-  - eslint-plugin-simple-import-sort
-- **Prettier** (^3.6.2): コードフォーマット
-  - prettier-plugin-packagejson
-- **mastra** (^0.14.0): MastraCLI
+#### 課題2: 一括生成の限界
 
-## MCP (Model Context Protocol)
+- **問題**: 一括生成では、長いコンテキストによる処理で質が落ちてしまうのではないか
+- **検証**: Implementation 1と2で一括生成の影響を検証
 
-プロジェクトはMastraのMCPサーバーを使用しています：
+#### 課題3: 逐次討論の効果
 
-```json
-{
-  "mcpServers": {
-    "mastra": {
-      "command": "npx",
-      "args": ["-y", "@mastra/mcp-docs-server"]
-    }
-  }
-}
-```
-# プロジェクト概要
+- **背景**: ペルソナ多様性と一括生成は先行研究で行われていた
+- **仮説**: これを逐次討論にしたらもっと精度が良くなるのではないか
+- **検証**: Implementation 2と4を比較して逐次討論の効果を検証
 
-このプロジェクトは、Mastraを使用したAIエージェントによる論証システムの研究実装です。
+### 研究の主仮説
 
-## 基本情報
+**ペルソナ多様性と逐次討論を組み合わせることで、より質の高い論証文を生成できる**という仮説を検証します。
 
-- **プロジェクト名**: Persona Sequential Debate Agents
-- **目的**: LLMエージェントの議論能力と論証構築能力の検証
-- **フレームワーク**: Mastra (AIエージェント・ワークフローフレームワーク)
-- **言語**: TypeScript
-- **パッケージマネージャー**: pnpm (workspace構成)
-- **Node.js**: v22.0.0以上
-- **モジュールシステム**: ESM (`"type": "module"`)
+- ペルソナ多様性により、多角的な視点から論証を構築できる
+- 逐次討論により、長いコンテキストの問題を回避し、段階的に論証を改善できる
+- この2つを組み合わせることで、単一LLMや一括生成の限界を克服できる
 
 ## プロジェクト構造
 
 ```
 src/implementations/
-├── implementation-1/  # One-shot論証生成
-├── implementation-2/  # ペルソナベース固定ワークフロー
-├── implementation-3/  # 自律的逐次討論（Self-Deliberative Agent）
-└── implementation-4/  # ペルソナ多様性と自律的逐次討論の組み合わせ
+├── implementation-1/  # 単一LLMと一括生成
+├── implementation-2/  # ペルソナ多様性と一括生成
+├── implementation-3/  # 単一LLMと逐次討論
+└── implementation-4/  # ペルソナ多様性と逐次討論
 ```
-
-## 技術スタック
-
-### 主要依存関係
-
-- **@mastra/core** (^0.20.0): Mastraの中核パッケージ
-- **@mastra/memory** (^0.15.5): メモリ機能
-- **@mastra/libsql** (^0.15.1): データベース統合
-- **@mastra/loggers** (^0.10.15): ロギング機能
-- **@ai-sdk/openai** (^1.3.24): OpenAI統合
-- **ai** (^4.0.42): AI SDK
-- **zod** (^3.25.76): スキーマバリデーション
-
-### 開発ツール
-
-- **TypeScript** (^5.9.3): 型安全なコード
-- **ESLint** (^9.37.0): リンティング
-  - typescript-eslint
-  - eslint-plugin-unicorn
-  - eslint-plugin-promise
-  - eslint-plugin-n
-  - eslint-plugin-simple-import-sort
-- **Prettier** (^3.6.2): コードフォーマット
-  - prettier-plugin-packagejson
-- **mastra** (^0.14.0): MastraCLI
 
 ## MCP (Model Context Protocol)
 

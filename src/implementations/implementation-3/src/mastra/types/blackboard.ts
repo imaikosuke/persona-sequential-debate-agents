@@ -4,16 +4,11 @@
  */
 
 /**
- * 対話行為の種類
+ * 対話行為の種類（簡略化版）
  */
 export enum DialogueAct {
-  PROPOSE = "propose", // 新しい主張の追加または既存主張の修正
-  CRITIQUE = "critique", // 既存主張への反論や弱点の指摘
-  QUESTION = "question", // 情報要求、不確実箇所の明確化
-  FACT_CHECK = "fact_check", // 出典探索や検証（将来的にツール連携）
-  SYNTHESIZE = "synthesize", // 部分合意、要約、論点整理
-  PLAN = "plan", // 次の探索方針の更新
-  FINALIZE = "finalize", // 収束宣言と最終文生成
+  ADD_ARGUMENT = "add_argument", // 新しい主張を追加、または既存主張に反論
+  FINALIZE = "finalize", // 議論を終了し最終文書を生成
 }
 
 /**
@@ -44,38 +39,10 @@ export interface Attack {
 }
 
 /**
- * 質問（Question）
- * 未解決の情報要求を表現
- */
-export interface Question {
-  id: string;
-  text: string;
-  targetClaimId?: string; // 対象となる主張ID（任意）
-  priority: "high" | "medium" | "low"; // 優先度
-  resolved: boolean; // 解決済みかどうか
-}
-
-/**
- * 計画（Plan）
- * 現在の探索方針を表現
- */
-export interface Plan {
-  currentFocus: string; // 現在注力している論点
-  nextSteps: string[]; // 次に取り組むべきタスク
-  avoidTopics: string[]; // 避けるべき重複トピック
-}
-
-/**
  * 執筆パッド（Writepad）
- * 逐次統合されるアウトラインと本文
+ * 最終文書の下書き
  */
 export interface Writepad {
-  outline: string; // アウトライン
-  sections: {
-    title: string; // セクションタイトル
-    content: string; // セクション内容
-    claimIds: string[]; // 関連する主張ID
-  }[];
   finalDraft?: string; // 最終原稿（完成時）
 }
 
@@ -93,13 +60,7 @@ export interface BlackboardState {
   // 攻撃（反論）リスト
   attacks: Attack[];
 
-  // 未解決の質問キュー
-  questions: Question[];
-
-  // 現在の探索方針
-  plan: Plan;
-
-  // 執筆パッド（逐次統合されるアウトライン）
+  // 執筆パッド（最終文書の下書き）
   writepad: Writepad;
 
   // メタ情報
@@ -112,51 +73,41 @@ export interface BlackboardState {
 }
 
 /**
- * 対話行為の選択結果
+ * 議論アクション（簡略化版）
+ * 決定と実行を統合したアクション
  */
-export interface DialogueActDecision {
-  dialogueAct: DialogueAct; // 選択された対話行為
-  reasoning: string; // 選択理由
-  expectedUtility: {
-    persuasivenessGain: number; // 説得力の期待改善度 [0.0, 1.0]
-    novelty: number; // 新規性 [0.0, 1.0]
-    uncertaintyReduction: number; // 不確実性低減 [0.0, 1.0]
-    cost: number; // 推定トークン数
-  };
-  targetClaimIds?: string[]; // 関連するclaim ID（該当する場合）
-  shouldFinalize: boolean; // 収束すべきかどうか
-  convergenceAnalysis: {
-    beliefConvergence: number; // 信念収束度 [0.0, 1.0]
-    noveltyRate: number; // 新規性率 [0.0, 1.0]
-    unresolvedCriticalAttacks: number; // 未解決の致命的攻撃数
-  };
+export interface DebateAction {
+  action: DialogueAct; // 実行するアクション
+  reasoning: string; // 選択理由（簡潔に）
+
+  // ADD_ARGUMENTの場合
+  newClaims?: Claim[]; // 新しい主張
+  newAttacks?: Attack[]; // 新しい反論（既存主張への攻撃）
+
+  // FINALIZEの場合
+  finalDocument?: string; // 最終文書
 }
 
 /**
- * 対話行為の実行結果
+ * 対話行為の実行結果（簡略化版）
+ * DebateActionから生成される
  */
 export interface ExecutionResult {
-  dialogueAct: DialogueAct; // 実行された対話行為
-  newClaims?: Claim[]; // 新しく追加された主張
-  updatedClaims?: Claim[]; // 更新された主張
-  newAttacks?: Attack[]; // 新しく追加された攻撃
-  resolvedAttacks?: string[]; // 解決された攻撃のID
-  newQuestions?: Question[]; // 新しく追加された質問
-  resolvedQuestions?: string[]; // 解決された質問のID
-  updatedPlan?: Partial<Plan>; // 更新された計画
-  updatedWritepad?: Partial<Writepad>; // 更新された執筆パッド
-  finalDocument?: string; // 最終文書（FINALIZE時）
+  dialogueAct: DialogueAct;
+  newClaims?: Claim[];
+  newAttacks?: Attack[];
+  finalDocument?: string;
 }
 
 /**
- * 判定結果（メトリクス）
+ * 対話行為の実行結果（簡略化版）
+ * DebateActionから生成される
  */
-export interface JudgmentMetrics {
-  beliefConvergence: number; // 信念収束度 [0.0, 1.0]
-  noveltyScore: number; // 新規性スコア [0.0, 1.0]
-  attackResolutionRate: number; // 攻撃解決率 [0.0, 1.0]
-  diversityScore: number; // 多様性スコア [0.0, 1.0] - 新規追加
-  convergenceScore: number; // 総合収束スコア [0.0, 1.0]
+export interface ExecutionResult {
+  dialogueAct: DialogueAct;
+  newClaims?: Claim[];
+  newAttacks?: Attack[];
+  finalDocument?: string;
 }
 
 /**

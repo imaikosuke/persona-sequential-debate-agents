@@ -90,6 +90,7 @@ export interface BlackboardState {
     tokenBudget: number;
     usedTokens: number;
     convergenceHistory: number[];
+    lastSelectedPersonaId?: string;
   };
 }
 
