@@ -17,7 +17,6 @@ export const finalizeStep = createStep({
   }),
   outputSchema: z.object({
     topic: z.string(),
-    finalDocument: z.string().optional(),
     argument: z.string().optional(),
     claims: z.array(z.any()),
     attacks: z.array(z.any()),
@@ -35,7 +34,6 @@ export const finalizeStep = createStep({
 
     const result = {
       topic: blackboard.topic,
-      finalDocument: finalDoc,
       argument: finalDoc,
       claims: blackboard.claims,
       attacks: blackboard.attacks,
@@ -69,10 +67,10 @@ export const finalizeStep = createStep({
       mdLines.push(`- ステータス: ${result.status}`);
       mdLines.push(`- ステップ数: ${result.stepCount}`);
       mdLines.push("");
-      if (result.finalDocument) {
+      if (result.argument) {
         mdLines.push(`## 最終ドキュメント`);
         mdLines.push("");
-        mdLines.push(result.finalDocument);
+        mdLines.push(result.argument);
         mdLines.push("");
       }
       mdLines.push(`## 主張 (Claims)`);

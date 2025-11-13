@@ -12,7 +12,6 @@ export const multiPersonaArgumentationWorkflow = createWorkflow({
   }),
   outputSchema: z.object({
     topic: z.string(),
-    finalDocument: z.string().optional(),
     argument: z.string().optional(),
     claims: z.array(z.any()),
     attacks: z.array(z.any()),

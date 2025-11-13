@@ -10,7 +10,7 @@ import { mastra } from "./mastra";
  */
 interface WorkflowResult {
   topic: string;
-  finalDocument?: string;
+  argument?: string;
   claims: Array<{
     id: string;
     text: string;
@@ -98,9 +98,9 @@ async function main() {
         }
       }
 
-      if (output.finalDocument) {
+      if (output.argument) {
         console.log("\n--- 最終文書 ---");
-        console.log(output.finalDocument);
+        console.log(output.argument);
       } else {
         console.log("\n⚠️  最終文書が生成されませんでした");
       }

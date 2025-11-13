@@ -26,7 +26,7 @@ export const argumentationWorkflow = createWorkflow({
   }),
   outputSchema: z.object({
     topic: z.string(),
-    finalDocument: z.string().optional(),
+    argument: z.string().optional(),
     claims: z.array(z.any()),
     attacks: z.array(z.any()),
     stepCount: z.number(),

@@ -88,7 +88,7 @@ const result = await run.start({
   },
 });
 
-console.log("最終文書:", result.output.finalDocument);
+console.log("最終文書:", result.output.argument);
 console.log("生成された主張数:", result.output.claims.length);
 console.log("総ステップ数:", result.output.stepCount);
 ```
@@ -153,7 +153,7 @@ _注: MVP版では3つの対話行為のみ実装。将来的にQUESTION、FACT_
 ```typescript
 {
   topic: "電子投票制度の導入について",
-  finalDocument: "電子投票制度の導入に関する論証文...",
+  argument: "電子投票制度の導入に関する論証文...",
   claims: [
     {
       id: "claim-1",
