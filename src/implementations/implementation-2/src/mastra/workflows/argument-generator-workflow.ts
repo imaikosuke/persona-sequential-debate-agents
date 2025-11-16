@@ -222,7 +222,7 @@ const generateArgumentStep = createStep({
 
     console.log(`[Argument Generation] Generated argument (${argument.length} chars)`);
 
-    return {
+    const result = {
       query: proposition,
       personaLists,
       selectedPersonaLists,
@@ -230,6 +230,41 @@ const generateArgumentStep = createStep({
       plan,
       argument,
     };
+
+    // Write output to arguments folder for comparison
+    try {
+      const { writeFile, mkdir } = await import("node:fs/promises");
+      const pathModule = await import("node:path");
+      const { fileURLToPath } = await import("node:url");
+
+      // プロジェクトルートのargumentsフォルダを探す
+      // このファイルは implementation-2/src/mastra/workflows/argument-generator-workflow.ts
+      const currentFile = fileURLToPath(import.meta.url);
+      const currentDir = pathModule.dirname(currentFile);
+      // currentDir = .../implementation-2/src/mastra/workflows
+      // .. = .../implementation-2/src/mastra
+      // .. = .../implementation-2/src
+      // .. = .../implementation-2
+      // .. = .../implementations
+      // .. = .../src
+      // .. = プロジェクトルート
+      const projectRoot = pathModule.resolve(currentDir, "..", "..", "..", "..", "..", "..");
+      const argumentsDir = pathModule.resolve(projectRoot, "arguments");
+      const outArgumentsPath = pathModule.resolve(argumentsDir, "output-implementation-2.md");
+
+      // argumentsフォルダが存在しない場合は作成
+      await mkdir(argumentsDir, { recursive: true });
+
+      // 論証文だけを保存
+      const mdText = argument;
+      await writeFile(outArgumentsPath, mdText, { encoding: "utf8" });
+
+      console.log(`最終結果をargumentsフォルダに書き出しました: ${outArgumentsPath}`);
+    } catch (err) {
+      console.warn("argumentsフォルダへの書き出しに失敗しました:", err);
+    }
+
+    return result;
   },
 });
 
@@ -245,7 +280,7 @@ const generateArgumentStep = createStep({
  * Corresponds to the ArgumentGenerator.generate_one() method in Python
  */
 const argumentGeneratorWorkflow = createWorkflow({
-  id: "argument-generator-workflow",
+  id: "argumentGeneratorWorkflow",
   inputSchema: z.object({
     proposition: z.string().describe("The controversial proposition to debate"),
     isRandom: z.boolean().default(false).describe("Whether to randomly select personas"),

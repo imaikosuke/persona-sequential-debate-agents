@@ -514,34 +514,51 @@ export function analyzeArgumentStances(blackboard: BlackboardState): StanceAnaly
  * LLMの出力からJSONを安全に抽出する
  */
 export function extractJSON<T>(text: string): T | null {
-  try {
-    // まずそのままパース
-    return JSON.parse(text) as T;
-  } catch {
-    // JSONブロックを探す
-    const jsonMatch =
-      text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/```\s*([\s\S]*?)\s*```/);
+  // JSONブロックを探す
+  let jsonText = text;
+  const jsonMatch =
+    text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/```\s*([\s\S]*?)\s*```/);
 
-    if (jsonMatch) {
-      try {
-        return JSON.parse(jsonMatch[1]) as T;
-      } catch {
-        // パースエラー
-      }
-    }
-
+  if (jsonMatch) {
+    jsonText = jsonMatch[1];
+  } else {
     // 最後の手段: 最初の { から最後の } まで抽出
     const firstBrace = text.indexOf("{");
     const lastBrace = text.lastIndexOf("}");
 
     if (firstBrace !== -1 && lastBrace !== -1 && firstBrace < lastBrace) {
-      try {
-        return JSON.parse(text.slice(firstBrace, lastBrace + 1)) as T;
-      } catch {
-        // パースエラー
-      }
+      jsonText = text.slice(firstBrace, lastBrace + 1);
     }
+  }
 
-    return null;
+  // 不正な引用符を修正
+  // パターン1: "key": "value' のような場合（ダブルクォート開始、シングルクォート終了）
+  // 文字列値の終端がシングルクォートになっている場合を修正
+  jsonText = jsonText.replace(/: "([^"]*)'(\s*[,}\]]|\s*$)/gm, ': "$1"$2');
+  // パターン2: "key": 'value" のような場合（シングルクォート開始、ダブルクォート終了）
+  jsonText = jsonText.replace(/: '([^']*)"(\s*[,}\]]|\s*$)/gm, ': "$1"$2');
+  // パターン3: 文字列値の途中で引用符が混在している場合（より安全な方法）
+  // まず、文字列値の終端を確実に修正してから、途中の引用符を処理
+
+  try {
+    // まずそのままパース
+    return JSON.parse(jsonText) as T;
+  } catch (error) {
+    // パースエラーが発生した場合、より積極的な修正を試みる
+    try {
+      // より積極的な引用符修正
+      // 文字列値の終端がシングルクォートになっている場合を確実に修正
+      jsonText = jsonText.replace(/: "([^"]*?)'(\s*[,}\]]|\s*$)/gm, ': "$1"$2');
+      // 文字列値の途中で引用符が混在している場合
+      jsonText = jsonText.replace(/: "([^"]*?)'([^"]*?)"/g, ': "$1\'$2"');
+      // シングルクォートで囲まれた文字列値をダブルクォートに変換
+      jsonText = jsonText.replace(/: '([^']*?)'(\s*[,}\]]|\s*$)/gm, ': "$1"$2');
+      
+      return JSON.parse(jsonText) as T;
+    } catch (secondError) {
+      // それでも失敗した場合は null を返す
+      console.error("Failed to parse JSON after fixes:", jsonText.substring(0, 500));
+      return null;
+    }
   }
 }

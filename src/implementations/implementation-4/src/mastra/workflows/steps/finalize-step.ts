@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,6 +7,13 @@ import { z } from "zod";
 
 import { generateFinalDocument } from "../../agents/final-writer-agent";
 import type { MultiPersonaBlackboard } from "../../types";
+
+// プロジェクトルートを取得
+// finalize-step.ts の場所: src/implementations/implementation-4/src/mastra/workflows/steps/
+// プロジェクトルートに到達するには7階層上がる必要がある
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectRoot = resolve(__dirname, "..", "..", "..", "..", "..", "..", "..");
 
 export const finalizeStep = createStep({
   id: "finalize",
@@ -60,9 +67,19 @@ export const finalizeStep = createStep({
         await writeFile(outJsonPathRoot, jsonText, { encoding: "utf8" });
       }
 
-      // Also write to arguments folder for comparison
-      const argumentsDir = resolve(runtimeDir, "arguments");
+      // Also write to arguments folder for comparison (プロジェクトルートのargumentsフォルダ)
+      const argumentsDir = resolve(projectRoot, "arguments");
       const outArgumentsPath = resolve(argumentsDir, "output-implementation-4.md");
+
+      // arguments ディレクトリが存在しない場合は作成
+      try {
+        await mkdir(argumentsDir, { recursive: true });
+      } catch (mkdirErr) {
+        // ディレクトリが既に存在する場合は無視
+        if ((mkdirErr as NodeJS.ErrnoException).code !== "EEXIST") {
+          throw mkdirErr;
+        }
+      }
 
       // 論証文だけを保存
       const mdText = result.argument || "";
