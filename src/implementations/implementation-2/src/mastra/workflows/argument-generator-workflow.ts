@@ -188,11 +188,11 @@ const draftPlan = createStep({
 /**
  * Step 4: Argument Generation
  *
- * Generates the final counterargument article based on the plan
+ * Generates the final argumentative essay based on the plan
  */
 const generateArgumentStep = createStep({
   id: "generate-argument",
-  description: "Generates the final counterargument article",
+  description: "Generates the final argumentative essay",
   inputSchema: z.object({
     proposition: z.string(),
     personaLists: z.array(personaSchema),
@@ -215,7 +215,7 @@ const generateArgumentStep = createStep({
 
     const { proposition, personaLists, selectedPersonaLists, discussion, plan } = inputData;
 
-    console.log("\n[Argument Generation] Writing final counterargument...");
+    console.log("\n[Argument Generation] Writing final argumentative essay...");
 
     // Generate final argument
     const argument = await generateArgument(proposition, plan);

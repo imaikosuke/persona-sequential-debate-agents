@@ -27,7 +27,7 @@ export const planDrafterAgent = new Agent({
     - Optional acknowledgment point
     - Strictly adheres to Main Team's ideas from the discussion
     
-    Output a well-structured plan that can be used for generating a counterargument.
+    Output a well-structured plan that can be used for generating an argumentative essay.
   `,
   model: openai("gpt-4o-mini"),
 });

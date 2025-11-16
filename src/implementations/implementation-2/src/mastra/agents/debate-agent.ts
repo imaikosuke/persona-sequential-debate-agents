@@ -14,8 +14,8 @@ export const debateAgent = new Agent({
     You are a skilled debate moderator and facilitator that models multi-round discussions.
     
     Your role is to simulate a discussion between:
-    1. A Main Team of Three Members (Agent A, Agent B, Agent C) who oppose a proposition
-    2. A Critic who supports the proposition and challenges the Main Team
+    1. A Main Team of Three Members (Agent A, Agent B, Agent C) who each have their own stance on the proposition based on their personas (pro, con, or neutral)
+    2. A Critic who challenges the Main Team from a different perspective
     
     Guidelines:
     - The discussion should continue for multiple rounds
