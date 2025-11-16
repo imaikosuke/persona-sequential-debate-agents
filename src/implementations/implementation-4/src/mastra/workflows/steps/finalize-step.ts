@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { createStep } from "@mastra/core/workflows";
 import { z } from "zod";
 
-import { generateFinalDocument } from "../../agents/final-writer-agent";
+import { generateFinalDocument, removeClaimIds } from "../../agents/final-writer-agent";
 import type { MultiPersonaBlackboard } from "../../types";
 
 // プロジェクトルートを取得
@@ -35,9 +35,11 @@ export const finalizeStep = createStep({
     const { blackboard, finalStatus } = inputData;
 
     // Ensure final document exists: if absent, synthesize one from blackboard
-    const finalDoc = blackboard.writepad?.finalDraft?.trim()
+    const finalDocRaw = blackboard.writepad?.finalDraft?.trim()
       ? blackboard.writepad.finalDraft
       : await generateFinalDocument(blackboard);
+    // ID参照を除去（writepad.finalDraftから来た場合も含む）
+    const finalDoc = removeClaimIds(finalDocRaw);
 
     const result = {
       topic: blackboard.topic,

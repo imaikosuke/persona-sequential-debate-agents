@@ -16,7 +16,6 @@ export const finalWriterAgent = new Agent({
 - 反対意見・懸念への言及と反駁を適度に含める
 - 結論で立場と示唆を簡潔に再提示
 - 冗長さを避け、読みやすく、説得的に
-- 重要: 文章中に主要な主張ID（例: c2, c4）を括弧で参照しながら根拠を結び付けること
 - 重要: 少なくとも2つの反対論点（攻撃）を取り上げ、どのように対応/解決したかを明確に述べること
 `,
   model: openai("gpt-4o-mini"),
@@ -61,6 +60,19 @@ ${attacksText}
 `;
 }
 
+/**
+ * テキストから主張ID参照（例: (c1), (c3), (c5、c7)など）を除去する
+ */
+export function removeClaimIds(text: string): string {
+  let cleanedText = text.trim();
+  // (c数字) や (c数字、c数字) のようなパターンを削除
+  cleanedText = cleanedText.replace(/\(c\d+(?:、c\d+)*\)/g, "");
+  // 余分な空白を整理（ただし改行は保持）
+  cleanedText = cleanedText.replace(/[ \t]+/g, " ").trim();
+
+  return cleanedText;
+}
+
 export async function generateFinalDocument(blackboard: MultiPersonaBlackboard): Promise<string> {
   const prompt = buildFinalWritingPrompt(blackboard);
 
@@ -82,5 +94,6 @@ export async function generateFinalDocument(blackboard: MultiPersonaBlackboard):
     maxTokens: 3000,
   });
 
-  return String(result.text).trim();
+  // ID参照を除去
+  return removeClaimIds(String(result.text));
 }
