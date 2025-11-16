@@ -1,4 +1,4 @@
-.PHONY: help dev build start clean install lint lint-fix format format-fix typecheck check
+.PHONY: help dev build start clean install lint lint-fix format format-fix typecheck check run-1 run-2 run-3 run-4
 
 # デフォルトターゲット
 help:
@@ -9,6 +9,12 @@ help:
 	@echo "  make dev-2     - Implementation 2を開発モードで実行"
 	@echo "  make dev-3     - Implementation 3を開発モードで実行"
 	@echo "  make dev-4     - Implementation 4を開発モードで実行"
+	@echo ""
+	@echo "ワークフロー実行（ルートから実行可能）:"
+	@echo "  make run-1 [TOPIC=\"トピック\"]  - Implementation 1を実行して論証文を生成（デフォルト: 小学生はスマートフォンを持つべきか）"
+	@echo "  make run-2 [TOPIC=\"トピック\"]  - Implementation 2を実行して論証文を生成（デフォルト: 小学生はスマートフォンを持つべきか）"
+	@echo "  make run-3 [TOPIC=\"トピック\"]  - Implementation 3を実行して論証文を生成（デフォルト: 小学生はスマートフォンを持つべきか）"
+	@echo "  make run-4 [TOPIC=\"トピック\"]  - Implementation 4を実行して論証文を生成（デフォルト: 小学生はスマートフォンを持つべきか）"
 	@echo ""
 	@echo "ビルド:"
 	@echo "  make build-1   - Implementation 1をビルド"
@@ -114,3 +120,46 @@ check:
 	pnpm lint
 	pnpm format
 	pnpm typecheck
+
+# デフォルトトピック
+DEFAULT_TOPIC := 小学生はスマートフォンを持つべきか
+
+# Implementation 1: ワークフロー実行
+run-1:
+	@if [ -z "$(TOPIC)" ]; then \
+		echo "TOPICが指定されていないため、デフォルト値を使用します: $(DEFAULT_TOPIC)"; \
+		pnpm --filter implementation-1 save-output "$(DEFAULT_TOPIC)"; \
+	else \
+		echo "Implementation 1を実行中..."; \
+		pnpm --filter implementation-1 save-output "$(TOPIC)"; \
+	fi
+
+# Implementation 2: ワークフロー実行
+run-2:
+	@if [ -z "$(TOPIC)" ]; then \
+		echo "TOPICが指定されていないため、デフォルト値を使用します: $(DEFAULT_TOPIC)"; \
+		pnpm --filter implementation-2 run-workflow "$(DEFAULT_TOPIC)"; \
+	else \
+		echo "Implementation 2を実行中..."; \
+		pnpm --filter implementation-2 run-workflow "$(TOPIC)"; \
+	fi
+
+# Implementation 3: ワークフロー実行
+run-3:
+	@if [ -z "$(TOPIC)" ]; then \
+		echo "TOPICが指定されていないため、デフォルト値を使用します: $(DEFAULT_TOPIC)"; \
+		pnpm --filter implementation-3 run-workflow "$(DEFAULT_TOPIC)"; \
+	else \
+		echo "Implementation 3を実行中..."; \
+		pnpm --filter implementation-3 run-workflow "$(TOPIC)"; \
+	fi
+
+# Implementation 4: ワークフロー実行
+run-4:
+	@if [ -z "$(TOPIC)" ]; then \
+		echo "TOPICが指定されていないため、デフォルト値を使用します: $(DEFAULT_TOPIC)"; \
+		pnpm --filter implementation-4 run-workflow "$(DEFAULT_TOPIC)"; \
+	else \
+		echo "Implementation 4を実行中..."; \
+		pnpm --filter implementation-4 run-workflow "$(TOPIC)"; \
+	fi

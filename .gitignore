@@ -9,3 +9,5 @@ dist
 *.db
 *.db-*
 .cursor/rules
+arguments/
+docs/
