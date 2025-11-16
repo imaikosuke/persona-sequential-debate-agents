@@ -543,7 +543,7 @@ export function extractJSON<T>(text: string): T | null {
   try {
     // まずそのままパース
     return JSON.parse(jsonText) as T;
-  } catch (error) {
+  } catch {
     // パースエラーが発生した場合、より積極的な修正を試みる
     try {
       // より積極的な引用符修正
@@ -553,9 +553,9 @@ export function extractJSON<T>(text: string): T | null {
       jsonText = jsonText.replace(/: "([^"]*?)'([^"]*?)"/g, ': "$1\'$2"');
       // シングルクォートで囲まれた文字列値をダブルクォートに変換
       jsonText = jsonText.replace(/: '([^']*?)'(\s*[,}\]]|\s*$)/gm, ': "$1"$2');
-      
+
       return JSON.parse(jsonText) as T;
-    } catch (secondError) {
+    } catch {
       // それでも失敗した場合は null を返す
       console.error("Failed to parse JSON after fixes:", jsonText.substring(0, 500));
       return null;
