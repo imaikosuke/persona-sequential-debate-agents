@@ -53,7 +53,7 @@ export async function generateArgument(proposition: string, plan: string): Promi
         content: prompt,
       },
     ],
-    maxTokens: 4000,
+    maxTokens: 2000,
     temperature: 1,
   });
 

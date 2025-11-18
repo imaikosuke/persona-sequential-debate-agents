@@ -56,7 +56,7 @@ ${attacksText}
 タスク:
 - 上記を踏まえ、1本の最終的な論証文を日本語で執筆してください。
 - 箇条書きや見出しは用いず、自然な段落で連続した文章として出力してください。
-- 800〜1200語程度を目安とし、過度に冗長にならないようにしてください。
+- 文字数：1000文字程度を目安とし、過度に冗長にならないようにしてください。
 `;
 }
 
@@ -91,7 +91,7 @@ export async function generateFinalDocument(blackboard: MultiPersonaBlackboard):
       { role: "user", content: prompt },
     ],
     temperature: 0.7,
-    maxTokens: 3000,
+    maxTokens: 2000,
   });
 
   // ID参照を除去

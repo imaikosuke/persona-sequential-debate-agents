@@ -41,7 +41,7 @@ ${importantAttacks.length > 0 ? importantAttacks.map(a => `- ${a.description}`).
 - 反対意見への言及と反駁を含める
 - 結論で立場を再確認する
 - 技術用語やIDは使用しない
-- 400-800文字程度
+- 文字数：1000文字程度
 `;
 }
 

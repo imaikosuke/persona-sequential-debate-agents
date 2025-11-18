@@ -45,7 +45,8 @@ async function main() {
 
 制約：
 - 禁則：箇条書きや思考説明をしない
-- 思考過程の開示は行わず、最終テキストのみを出力してください`,
+- 思考過程の開示は行わず、最終テキストのみを出力してください
+- 文字数：1000文字程度で生成してください`,
         },
         {
           role: "user",
@@ -54,7 +55,7 @@ async function main() {
       ],
       temperature: 0.0,
       topP: 1.0,
-      maxTokens: 2048,
+      maxTokens: 2000,
     });
 
     const argument = result.text;
