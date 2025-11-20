@@ -1,4 +1,4 @@
-.PHONY: help dev build start clean install lint lint-fix format format-fix typecheck check run-1 run-2 run-3 run-4
+.PHONY: help dev build start clean install lint lint-fix format format-fix typecheck check run-1 run-2 run-3 run-4 run-all
 
 # デフォルトターゲット
 help:
@@ -15,6 +15,7 @@ help:
 	@echo "  make run-2 [TOPIC=\"トピック\"]  - Implementation 2を実行して論証文を生成（デフォルト: 小学生はスマートフォンを持つべきか）"
 	@echo "  make run-3 [TOPIC=\"トピック\"]  - Implementation 3を実行して論証文を生成（デフォルト: 小学生はスマートフォンを持つべきか）"
 	@echo "  make run-4 [TOPIC=\"トピック\"]  - Implementation 4を実行して論証文を生成（デフォルト: 小学生はスマートフォンを持つべきか）"
+	@echo "  make run-all [TOPIC=\"トピック\"] - Implementation 1-4を並列で同時実行（デフォルト: 小学生はスマートフォンを持つべきか）"
 	@echo ""
 	@echo "ビルド:"
 	@echo "  make build-1   - Implementation 1をビルド"
@@ -162,4 +163,14 @@ run-4:
 	else \
 		echo "Implementation 4を実行中..."; \
 		pnpm --filter implementation-4 run-workflow "$(TOPIC)"; \
+	fi
+
+# 全実装を並列実行
+run-all:
+	@echo "Implementation 1-4を並列で実行中..."
+	@if [ -z "$(TOPIC)" ]; then \
+		echo "TOPICが指定されていないため、デフォルト値を使用します: $(DEFAULT_TOPIC)"; \
+		$(MAKE) -j4 TOPIC="$(DEFAULT_TOPIC)" run-1 run-2 run-3 run-4; \
+	else \
+		$(MAKE) -j4 TOPIC="$(TOPIC)" run-1 run-2 run-3 run-4; \
 	fi
