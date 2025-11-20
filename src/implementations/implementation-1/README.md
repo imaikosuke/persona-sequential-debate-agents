@@ -11,7 +11,7 @@
 - 外部知識・ツール不使用
 - Few-shot例示なし
 - 思考過程の開示なし
-- パラメータ固定（temperature: 0.0, top_p: 1.0, max_tokens: 2000）
+- パラメータ固定（temperature: 0.7, top_p: 1.0, max_tokens: 2000）
 
 ## 使い方
 

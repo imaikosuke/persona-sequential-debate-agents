@@ -30,29 +30,21 @@ export const deliberationLoopStep = createStep({
     const maxSteps = inputData.maxSteps ?? 10;
     let shouldContinue = true;
 
-    console.log(`逐次討論を開始（最大${maxSteps}ステップ）`);
+    console.log(`マルチペルソナ逐次討論を開始（最大${maxSteps}ステップ）\n`);
 
     while (shouldContinue && blackboard.meta.stepCount < maxSteps) {
-      console.log(`\n--- Step ${blackboard.meta.stepCount + 1} ---`);
+      const stepNum = blackboard.meta.stepCount + 1;
+      console.log(`\n=== ステップ ${stepNum} ===`);
 
-      // 対話行為の選択
+      // 対話行為の選択（エージェントが自律的に判断）
+      console.log("次のアクションを決定・実行中...");
       const decision = await selectDialogueActWithPersona(blackboard);
       if (!decision) {
         console.error("対話行為の選択に失敗しました");
         break;
       }
 
-      // 早期は反駁を強制（攻撃が少ない場合）
-      const needCritique =
-        blackboard.attacks.length < 2 ||
-        (blackboard.meta.stepCount < 5 && blackboard.attacks.length < 3);
-      const chosenAct =
-        needCritique && decision.dialogueAct !== DialogueAct.FINALIZE
-          ? DialogueAct.CRITIQUE
-          : decision.dialogueAct;
-
       // ペルソナ選択（直近のペルソナを回避）
-      // Implementation-2と同様にロールに依存しない
       const pickNotLast = () => {
         const lastId = blackboard.meta.lastSelectedPersonaId;
         const notLast = blackboard.personas.find(p => p.id !== lastId);
@@ -64,26 +56,18 @@ export const deliberationLoopStep = createStep({
         persona = pickNotLast();
       }
 
-      console.log(
-        `アクション: ${chosenAct} / ペルソナ: ${persona.name}${
-          chosenAct !== decision.dialogueAct ? " [forced]" : ""
-        }`,
-      );
+      console.log(`アクション: ${decision.dialogueAct}`);
+      console.log(`担当ペルソナ: ${persona.name}`);
+      console.log(`理由: ${decision.reasoning}`);
 
-      let execution = await executeDialogueActWithPersona(chosenAct, persona, blackboard);
+      const execution = await executeDialogueActWithPersona(
+        decision.dialogueAct,
+        persona,
+        blackboard,
+      );
       if (!execution) {
         console.error("対話行為の実行に失敗しました");
         break;
-      }
-
-      // 反駁強制時に攻撃が無い場合は1回だけ再試行
-      if (
-        chosenAct === DialogueAct.CRITIQUE &&
-        (!execution.newAttacks || execution.newAttacks.length === 0)
-      ) {
-        console.warn("CRITIQUEで攻撃が生成されませんでした。再試行します。");
-        const retry = await executeDialogueActWithPersona(chosenAct, persona, blackboard);
-        if (retry) execution = retry;
       }
 
       blackboard = updateBlackboard(blackboard, execution);

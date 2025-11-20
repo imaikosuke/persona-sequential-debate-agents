@@ -53,7 +53,7 @@ async function main() {
           content: topic,
         },
       ],
-      temperature: 0.0,
+      temperature: 0.7,
       topP: 1.0,
       maxTokens: 2000,
     });

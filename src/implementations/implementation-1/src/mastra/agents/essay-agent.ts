@@ -8,7 +8,7 @@ import { Agent } from "@mastra/core/agent";
  * - ツール不使用
  * - 外部知識不使用
  * - 一度のプロンプト送信で完結
- * - パラメータ固定（temperature: 0.0, top_p: 1.0, max_tokens: 2000）
+ * - パラメータ固定（temperature: 0.7, top_p: 1.0, max_tokens: 2000）
  */
 export const essayAgent = new Agent({
   name: "Essay Agent",
@@ -23,7 +23,7 @@ export const essayAgent = new Agent({
   defaultGenerateOptions: {
     toolChoice: "none",
     maxSteps: 1,
-    temperature: 0.0,
+    temperature: 0.7,
     topP: 1.0,
     maxTokens: 2000,
   },

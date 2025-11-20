@@ -84,11 +84,6 @@ export function buildPersonaDeliberationPrompt(blackboard: MultiPersonaBlackboar
   const lastPersonaInfo = blackboard.meta.lastSelectedPersonaId
     ? `- 直前に使用したペルソナID: ${blackboard.meta.lastSelectedPersonaId}\n- 次は同一IDの連続選択は避けること`
     : `- 直前に使用したペルソナID: （なし）`;
-  const critiqueHint =
-    blackboard.attacks.length < 2 ||
-    (blackboard.meta.stepCount < 5 && blackboard.attacks.length < 3)
-      ? `- 現在、攻撃(反駁)が不足しています。次は critique か fact_check を優先して選択してください。`
-      : `- 攻撃は一定数存在します。状況に応じて最適な行為を選択してください。`;
 
   return `
 ## 現在の議論状態（マルチペルソナ）
@@ -136,12 +131,46 @@ ${
     .join("\n") || "（なし）"
 }
 
-### メタ
+### 議論の状態
 - ステップ数: ${blackboard.meta.stepCount}
-- 合意レベル（暫定）: ${blackboard.consensusLevel.toFixed(2)}
+- 主張数: ${blackboard.claims.length}
+- 反論数: ${blackboard.attacks.length}（未解決: ${unresolvedAttacks.length}件）
 - 反論率: ${blackboard.claims.length > 0 ? ((blackboard.attacks.length / blackboard.claims.length) * 100).toFixed(1) : "0"}%（理想: 30%以上）
+- 賛成の主張: ${
+    blackboard.claims.filter(c => {
+      const text = c.text.toLowerCase();
+      return (
+        text.includes("べきである") ||
+        text.includes("べきだ") ||
+        text.includes("重要") ||
+        text.includes("必要") ||
+        text.includes("有益") ||
+        text.includes("効果的")
+      );
+    }).length
+  }件
+- 反対の主張: ${
+    blackboard.claims.filter(c => {
+      const text = c.text.toLowerCase();
+      return (
+        text.includes("べきではない") ||
+        text.includes("べきでない") ||
+        text.includes("問題") ||
+        text.includes("危険") ||
+        text.includes("リスク") ||
+        text.includes("懸念") ||
+        text.includes("悪影響")
+      );
+    }).length
+  }件
+- 合意レベル（暫定）: ${blackboard.consensusLevel.toFixed(2)}
 ${lastPersonaInfo}
-${critiqueHint}
+
+${
+  blackboard.claims.length > 0 && blackboard.attacks.length / blackboard.claims.length < 0.3
+    ? "⚠️ **注意**: 反論の比率が低すぎます。既存の主張への反論を積極的に追加してください。\n"
+    : ""
+}
 
 ## タスク
 - 次に取るべき対話行為を選択してください。
