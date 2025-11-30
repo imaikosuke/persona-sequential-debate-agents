@@ -8,13 +8,6 @@ import { z } from "zod";
 import { generateFinalDocument, removeClaimIds } from "../../agents/final-writer-agent";
 import type { MultiPersonaBlackboard } from "../../types";
 
-// プロジェクトルートを取得
-// finalize-step.ts の場所: src/implementations/implementation-4/src/mastra/workflows/steps/
-// プロジェクトルートに到達するには7階層上がる必要がある
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = resolve(__dirname, "..", "..", "..", "..", "..", "..", "..");
-
 export const finalizeStep = createStep({
   id: "finalize",
   description: "結果の最終化（マルチペルソナ）",
@@ -68,6 +61,10 @@ export const finalizeStep = createStep({
       }
 
       // Also write to arguments folder for comparison (プロジェクトルートのargumentsフォルダ)
+      // プロジェクトルートを取得（関数スコープ内で計算して衝突を回避）
+      const stepFilename = fileURLToPath(import.meta.url);
+      const stepDirname = dirname(stepFilename);
+      const projectRoot = resolve(stepDirname, "..", "..", "..", "..", "..", "..", "..");
       const argumentsDir = resolve(projectRoot, "arguments");
       const outArgumentsPath = resolve(argumentsDir, "output-implementation-4.md");
 

@@ -12,13 +12,6 @@ import { z } from "zod";
 
 import type { BlackboardState } from "../../types/blackboard";
 
-// プロジェクトルートを取得
-// finalize-step.ts の場所: src/implementations/implementation-3/src/mastra/workflows/steps/
-// プロジェクトルートに到達するには7階層上がる必要がある
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = resolve(__dirname, "..", "..", "..", "..", "..", "..", "..");
-
 /**
  * 最終化ステップ
  * 結果を整形して返す
@@ -60,6 +53,10 @@ export const finalizeStep = createStep({
       const outMdPathRuntime = resolve(runtimeDir, "final-output.md");
 
       // Also write to arguments folder for comparison (プロジェクトルートのargumentsフォルダ)
+      // プロジェクトルートを取得（関数スコープ内で計算して衝突を回避）
+      const stepFilename = fileURLToPath(import.meta.url);
+      const stepDirname = dirname(stepFilename);
+      const projectRoot = resolve(stepDirname, "..", "..", "..", "..", "..", "..", "..");
       const argumentsDir = resolve(projectRoot, "arguments");
       const outArgumentsPath = resolve(argumentsDir, "output-implementation-3.md");
 
