@@ -69,7 +69,7 @@ export const deliberationLoopStep = createStep({
         break;
       }
 
-      blackboard = updateBlackboard(blackboard, execution);
+      blackboard = await updateBlackboard(blackboard, execution);
 
       // 攻撃・クロス参照に基づいて信念度を再計算
       blackboard = recalcClaimConfidences(blackboard);
@@ -105,7 +105,7 @@ export const deliberationLoopStep = createStep({
                 blackboard,
               );
               if (finalExecution && finalExecution.finalDocument) {
-                blackboard = updateBlackboard(blackboard, finalExecution);
+                blackboard = await updateBlackboard(blackboard, finalExecution);
               }
             }
           }
@@ -160,7 +160,7 @@ export const deliberationLoopStep = createStep({
             blackboard,
           );
           if (finalExecution && finalExecution.finalDocument) {
-            blackboard = updateBlackboard(blackboard, finalExecution);
+            blackboard = await updateBlackboard(blackboard, finalExecution);
           }
         }
       }

@@ -3,6 +3,9 @@
  * Implementation-3の改善点を反映
  */
 
+import { openai } from "@ai-sdk/openai";
+import { generateText } from "ai";
+
 import type { Attack, Claim, ExecutionResult, MultiPersonaBlackboard } from "../types";
 
 /**
@@ -24,19 +27,90 @@ function checkDuplicateAttack(
 }
 
 /**
+ * JSONを抽出するヘルパー関数
+ */
+function extractJSON<T>(text: string): T | null {
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    const match = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/```\s*([\s\S]*?)\s*```/);
+    if (match) {
+      try {
+        return JSON.parse(match[1]) as T;
+      } catch {
+        void 0;
+      }
+    }
+    const first = text.indexOf("{");
+    const last = text.lastIndexOf("}");
+    if (first !== -1 && last !== -1 && first < last) {
+      try {
+        return JSON.parse(text.slice(first, last + 1)) as T;
+      } catch {
+        void 0;
+      }
+    }
+    return null;
+  }
+}
+
+/**
+ * LLMを使って反論解決を判定する
+ * 新しい主張が既存の反論の論点を覆しているかを文脈を考慮して判定
+ */
+async function checkAttackResolutionWithLLM(
+  newClaim: Claim,
+  existingAttack: Attack,
+): Promise<boolean> {
+  const prompt = `以下の新しい主張が、既存の反論の論点を覆しているか判定してください。
+
+**既存の反論:**
+${existingAttack.description}
+
+**新しい主張:**
+${newClaim.text}
+
+新しい主張が反論の論点を直接的に覆している、または反論で指摘された問題に対する解決策を提示している場合、trueを返してください。
+単に異なる視点を提示しているだけの場合はfalseを返してください。
+
+JSON形式で回答してください:
+{"resolved": true または false}`;
+
+  try {
+    const result = await generateText({
+      model: openai("gpt-4o-mini"),
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.3,
+      maxTokens: 100,
+    });
+
+    const json = extractJSON<{ resolved: boolean }>(result.text);
+    return json?.resolved ?? false;
+  } catch (error) {
+    console.error("Error in checkAttackResolutionWithLLM:", error);
+    return false;
+  }
+}
+
+/**
  * 反論解決メカニズム
  * 新しい反論や主張が既存の反論を解決するかチェック
- * Implementation-3の改善点を反映
+ * Implementation 3と同じロジックを使用（LLMベースの判定）
  */
-function resolveAttacks(
+async function resolveAttacks(
   blackboard: MultiPersonaBlackboard,
   newClaims: Claim[],
   newAttacks: Attack[],
-): MultiPersonaBlackboard {
+): Promise<MultiPersonaBlackboard> {
   const updated = { ...blackboard, attacks: [...blackboard.attacks] };
 
-  // 新しい反論が既存の反論の fromClaimId を攻撃する場合、
-  // 元の反論を「反論された」とマーク（部分的に解決）
+  // 段階1: 新しい反論が既存の反論の fromClaimId を攻撃する場合、
+  // 元の反論を「反論された」とマーク（構造的な解決）
   for (const newAttack of newAttacks) {
     // 新しい反論が既存の反論の元主張（fromClaimId）を攻撃している場合
     const attackedAttacks = updated.attacks.filter(
@@ -56,87 +130,18 @@ function resolveAttacks(
     }
   }
 
-  // 新しい主張が既存の反論の論点を直接的に覆す場合、その反論を解決済みにする
-  // より多くのキーワードパターンを追加（改善版）
-  const resolutionPatterns = [
-    // 依存症・リスク関連
-    {
-      attack: ["依存症", "リスク", "依存"],
-      claim: ["依存症", "防ぐ", "軽減", "管理", "教育", "対策"],
-    },
-    // 集中力・学習関連
-    {
-      attack: ["集中力", "低下", "注意散漫"],
-      claim: ["集中力", "向上", "高める", "改善", "管理"],
-    },
-    // 健康・悪影響関連
-    {
-      attack: ["悪影響", "健康", "視力", "健康リスク"],
-      claim: ["悪影響", "軽減", "防ぐ", "管理", "教育", "対策", "リスク", "低減"],
-    },
-    // ネットいじめ・不適切コンテンツ関連
-    {
-      attack: ["ネットいじめ", "いじめ", "不適切", "コンテンツ", "危険"],
-      claim: ["ネットいじめ", "防ぐ", "軽減", "対策", "監視", "制限", "教育"],
-    },
-    // 学習効果関連
-    {
-      attack: ["学習", "効果", "低下", "妨げ"],
-      claim: ["学習", "効果", "向上", "高める", "改善"],
-    },
-    // 安全性・緊急時関連
-    {
-      attack: ["安全性", "安全", "危険", "リスク"],
-      claim: ["安全性", "向上", "確保", "保護", "監視"],
-    },
-    // アクセス制限・最新情報関連（新規追加）
-    {
-      attack: ["アクセス", "制限", "制約", "限界", "できない", "不可能"],
-      claim: ["アクセス", "可能", "提供", "利用", "利用可能", "利用できる"],
-    },
-    // 最新情報・最新技術関連（新規追加）
-    {
-      attack: ["最新", "情報", "技術", "アプリ", "最新の", "最新情報", "最新技術"],
-      claim: ["最新", "情報", "技術", "アプリ", "アクセス", "利用", "提供", "利用可能"],
-    },
-    // 代替手段・代替方法関連（新規追加）
-    {
-      attack: ["代替", "手段", "方法", "他の", "別の", "代替手段", "代替方法"],
-      claim: ["代替", "手段", "方法", "限界", "制限", "制約", "できない", "不可能", "不足"],
-    },
-    // 教育機会・学習機会関連（新規追加）
-    {
-      attack: ["教育", "機会", "学習", "機会", "逃す", "失う", "制限"],
-      claim: ["教育", "機会", "学習", "機会", "提供", "確保", "向上", "改善"],
-    },
-    // 必要性・必須性関連（新規追加）
-    {
-      attack: ["必要", "不要", "必須", "必須ではない", "必要ではない", "不要"],
-      claim: ["必要", "必須", "重要", "不可欠", "必要不可欠", "重要"],
-    },
-  ];
-
+  // 段階2: 新しい主張が既存の反論の論点を直接的に覆す場合、LLMで判定
   for (const newClaim of newClaims) {
-    const claimText = newClaim.text.toLowerCase();
+    // 未解決の反論のみをチェック
+    const unresolvedAttacks = updated.attacks.filter(
+      a => !a.resolved && (a.severity === "minor" || a.severity === "major"),
+    );
 
-    // この新しい主張が既存の反論の論点を覆している可能性をチェック
-    for (const existingAttack of updated.attacks) {
-      if (existingAttack.resolved) continue;
-
-      const attackDescription = existingAttack.description.toLowerCase();
-
-      // 各パターンをチェック
-      for (const pattern of resolutionPatterns) {
-        const attackMatches = pattern.attack.some(keyword => attackDescription.includes(keyword));
-        const claimMatches = pattern.claim.some(keyword => claimText.includes(keyword));
-
-        if (attackMatches && claimMatches) {
-          // 新しい主張が反論の論点を覆している場合、その反論を解決済みにする
-          if (existingAttack.severity === "minor" || existingAttack.severity === "major") {
-            existingAttack.resolved = true;
-            break; // 1つのパターンにマッチしたら次の反論へ
-          }
-        }
+    for (const existingAttack of unresolvedAttacks) {
+      // LLMで反論解決を判定
+      const isResolved = await checkAttackResolutionWithLLM(newClaim, existingAttack);
+      if (isResolved) {
+        existingAttack.resolved = true;
       }
     }
   }
@@ -185,11 +190,11 @@ export function initializeBlackboard(
   };
 }
 
-export function updateBlackboard(
+export async function updateBlackboard(
   blackboard: MultiPersonaBlackboard,
   executionResult: ExecutionResult,
   estimatedTokens = 500,
-): MultiPersonaBlackboard {
+): Promise<MultiPersonaBlackboard> {
   const updated: MultiPersonaBlackboard = {
     ...blackboard,
     meta: {
@@ -251,7 +256,7 @@ export function updateBlackboard(
     updated.attacks = [...updated.attacks, ...newAttacksWithDefaults];
 
     // 反論解決メカニズムを実行
-    const resolved = resolveAttacks(
+    const resolved = await resolveAttacks(
       updated,
       executionResult.newClaims || [],
       newAttacksWithDefaults,
@@ -282,7 +287,7 @@ export function updateBlackboard(
 
   // 反論解決メカニズムを実行（新しい主張のみの場合）
   if (executionResult.newClaims && !executionResult.newAttacks) {
-    const resolved = resolveAttacks(updated, executionResult.newClaims, []);
+    const resolved = await resolveAttacks(updated, executionResult.newClaims, []);
     updated.attacks = resolved.attacks;
   }
 

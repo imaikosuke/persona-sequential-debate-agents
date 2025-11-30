@@ -46,7 +46,6 @@ interface WorkflowResult {
     resolved: boolean;
   }>;
   stepCount: number;
-  convergenceHistory: number[];
   status: string;
 }
 
@@ -97,7 +96,6 @@ async function main() {
       console.log(`総ステップ数: ${output.stepCount}`);
       console.log(`生成された主張数: ${output.claims.length}`);
       console.log(`生成された攻撃数: ${output.attacks.length}`);
-      console.log(`収束履歴: ${output.convergenceHistory.join(", ")}`);
 
       console.log("\n--- 主張一覧 ---");
       for (const claim of output.claims) {
@@ -109,8 +107,9 @@ async function main() {
       if (output.attacks.length > 0) {
         console.log("\n--- 攻撃一覧 ---");
         for (const attack of output.attacks) {
+          const description = attack.description || "(説明なし)";
           console.log(
-            `[${attack.id}] ${attack.fromClaimId} → ${attack.toClaimId} (${attack.severity}): ${attack.description.slice(0, 80)}...`,
+            `[${attack.id}] ${attack.fromClaimId} → ${attack.toClaimId} (${attack.severity}): ${description.slice(0, 80)}...`,
           );
         }
       }

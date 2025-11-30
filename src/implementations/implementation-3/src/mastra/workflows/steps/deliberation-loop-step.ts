@@ -58,7 +58,7 @@ export const deliberationLoopStep = createStep({
       }
 
       // ブラックボードを更新（stepCountが増える）
-      blackboard = updateBlackboard(blackboard, execution);
+      blackboard = await updateBlackboard(blackboard, execution);
 
       // FINALIZEアクションの場合は終了
       if (decision.dialogueAct === DialogueAct.FINALIZE || decision.shouldFinalize) {
@@ -82,7 +82,7 @@ export const deliberationLoopStep = createStep({
         if (finalDecision && finalDecision.dialogueAct === DialogueAct.FINALIZE) {
           const finalExecution = await executeDialogueAct(DialogueAct.FINALIZE, blackboard);
           if (finalExecution && finalExecution.finalDocument) {
-            blackboard = updateBlackboard(blackboard, finalExecution);
+            blackboard = await updateBlackboard(blackboard, finalExecution);
           } else {
             // FINALIZEアクションが生成されなかった場合、またはfinalDocumentがない場合、LLMで最終文書を生成
             console.log("FINALIZEアクションが生成されなかったため、LLMで最終文書を生成します...");
@@ -111,7 +111,7 @@ export const deliberationLoopStep = createStep({
       if (finalDecision && finalDecision.dialogueAct === DialogueAct.FINALIZE) {
         const finalExecution = await executeDialogueAct(DialogueAct.FINALIZE, blackboard);
         if (finalExecution && finalExecution.finalDocument) {
-          blackboard = updateBlackboard(blackboard, finalExecution);
+          blackboard = await updateBlackboard(blackboard, finalExecution);
         } else {
           // FINALIZEアクションが生成されなかった場合、LLMで最終文書を生成
           console.log("FINALIZEアクションが生成されなかったため、LLMで最終文書を生成します...");

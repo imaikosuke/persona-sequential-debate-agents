@@ -315,17 +315,3 @@ ${unresolvedAttacksText}
 ${common}
 `;
 }
-
-export function buildPanelJudgmentPrompt(blackboard: MultiPersonaBlackboard): string {
-  return `
-## 評価対象の状態（マルチペルソナ）
-トピック: ${blackboard.topic}
-主張数: ${blackboard.claims.length}
-攻撃数: ${blackboard.attacks.length}
-未解決攻撃: ${blackboard.attacks.filter(a => !a.resolved).length}
-クロス参照: ${blackboard.crossReferences.length}
-合意レベル（暫定）: ${blackboard.consensusLevel.toFixed(2)}
-
-各メトリクスを0.0-1.0で返してください（JSON）。
-`;
-}

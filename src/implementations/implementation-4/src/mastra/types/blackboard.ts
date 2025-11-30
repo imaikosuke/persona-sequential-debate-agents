@@ -132,11 +132,3 @@ export interface ExecutionResult {
   finalDocument?: string;
   crossReferences?: CrossReference[];
 }
-
-export interface JudgmentMetrics {
-  beliefConvergence: number;
-  noveltyScore: number;
-  attackResolutionRate: number;
-  diversityScore: number;
-  convergenceScore: number;
-}
