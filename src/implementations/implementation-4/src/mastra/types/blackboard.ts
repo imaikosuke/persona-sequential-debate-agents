@@ -3,7 +3,7 @@
  */
 
 export enum DialogueAct {
-  PROPOSE = "propose",   // 新しい主張の追加
+  PROPOSE = "propose", // 新しい主張の追加
   CRITIQUE = "critique", // 既存主張への反論
   FINALIZE = "finalize", // 議論の終了
 }
