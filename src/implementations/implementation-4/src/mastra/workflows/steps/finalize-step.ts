@@ -28,7 +28,6 @@ export const finalizeStep = createStep({
     claims: z.array(z.any()),
     attacks: z.array(z.any()),
     stepCount: z.number(),
-    convergenceHistory: z.array(z.number()),
     status: z.string(),
   }),
   execute: async ({ inputData }) => {
@@ -47,7 +46,6 @@ export const finalizeStep = createStep({
       claims: blackboard.claims,
       attacks: blackboard.attacks,
       stepCount: blackboard.meta.stepCount,
-      convergenceHistory: blackboard.meta.convergenceHistory,
       status: finalStatus,
     };
 

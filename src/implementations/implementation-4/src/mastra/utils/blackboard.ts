@@ -167,7 +167,6 @@ export function initializeBlackboard(
       stepCount: 0,
       tokenBudget,
       usedTokens: 0,
-      convergenceHistory: [],
     },
     personas,
     personaContributions: Object.fromEntries(
@@ -438,7 +437,12 @@ export function checkConvergence(
 
 /**
  * 攻撃・クロス参照に基づく信念度の再計算（ヒューリスティック）
- * Implementation-3の改善点を反映：初期の主張への最低限の信念度保証、段階的な反論の影響
+ * Implementation 3と同じロジックを使用（逐次討論の仕組みを統一評価するため）
+ * - 初期の主張（最初の3件）には最低限の信念度0.3を保証
+ * - 未解決の重大な反論: 最初の反論は-0.1、2つ目以降は-0.05、最大で-0.3まで
+ * - 未解決の軽微な反論: -0.03 × 件数
+ * - 解決済みの反論: +0.02 × 件数
+ * - 支持する主張: +0.05 × 件数（クロス参照からカウント）
  */
 export function recalcClaimConfidences(blackboard: MultiPersonaBlackboard): MultiPersonaBlackboard {
   if (blackboard.claims.length === 0) return blackboard;
@@ -459,16 +463,19 @@ export function recalcClaimConfidences(blackboard: MultiPersonaBlackboard): Mult
   }
 
   const updatedClaims: Claim[] = blackboard.claims.map(c => {
-    // 初期の主張（最初の5件）には最低限の信念度を保証
+    // 初期の主張（最初の3件）には最低限の信念度を保証
     const isInitialClaim = c.createdAt <= 3;
     const minConfidence = isInitialClaim ? 0.3 : 0.0;
 
     const targeted = attacksByTarget.get(c.id) ?? [];
-    const unresolvedMinor = targeted.filter(a => !a.resolved && a.severity === "minor").length;
-    const resolvedAgainst = targeted.filter(a => a.resolved).length;
+    const unresolvedMinorAttacks = targeted.filter(a => !a.resolved && a.severity === "minor");
+    const resolvedAttacks = targeted.filter(a => a.resolved);
     const supports = supportsByClaim.get(c.id) ?? 0;
 
-    let confidence = c.confidence ?? 0.7;
+    // Implementation 3と同じロジック: 元の信念度を初期値として使用
+    // confidenceが未定義の場合は0.7をデフォルト値として使用
+    const baseConfidence = c.confidence ?? 0.7;
+    let confidence = baseConfidence;
 
     // 未解決の重大な反論がある場合、信念度を下げる
     // 反論の影響を段階的に減らす（最初の反論は-0.1、2つ目以降は-0.05）
@@ -479,14 +486,15 @@ export function recalcClaimConfidences(blackboard: MultiPersonaBlackboard): Mult
       // 最初の反論は-0.1、2つ目以降は-0.05
       confidence -= 0.1 + (unresolvedMajorAttacks.length - 1) * 0.05;
       // 最大で-0.3まで（3件以上の反論があっても、影響を制限）
-      confidence = Math.max(confidence, (c.confidence ?? 0.7) - 0.3);
+      // Implementation 3と同じロジック: 元の信念度から-0.3を上限とする
+      confidence = Math.max(confidence, baseConfidence - 0.3);
     }
 
     // 未解決の軽微な反論がある場合、少し信念度を下げる
-    confidence -= unresolvedMinor * 0.03;
+    confidence -= unresolvedMinorAttacks.length * 0.03;
 
     // 解決済みの反論がある場合、議論が深まったことを示すため、少し信念度を上げる
-    confidence += resolvedAgainst * 0.02;
+    confidence += resolvedAttacks.length * 0.02;
 
     // 支持する主張がある場合、信念度を上げる
     confidence += supports * 0.05;
@@ -496,7 +504,7 @@ export function recalcClaimConfidences(blackboard: MultiPersonaBlackboard): Mult
 
     return {
       ...c,
-      confidence: Number.isFinite(newConfidence) ? newConfidence : c.confidence,
+      confidence: Number.isFinite(newConfidence) ? newConfidence : baseConfidence,
       lastUpdated: currentStep,
     };
   });

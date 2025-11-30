@@ -16,7 +16,6 @@ export const multiPersonaArgumentationWorkflow = createWorkflow({
     claims: z.array(z.any()),
     attacks: z.array(z.any()),
     stepCount: z.number(),
-    convergenceHistory: z.array(z.number()),
     status: z.string(),
   }),
 })

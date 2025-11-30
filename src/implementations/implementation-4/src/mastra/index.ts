@@ -3,7 +3,6 @@ import { LibSQLStore } from "@mastra/libsql";
 import { PinoLogger } from "@mastra/loggers";
 
 import { personaDeliberativeAgent } from "./agents/deliberative-agent";
-import { judgePanelAgent } from "./agents/judge-panel-agent";
 import { multiExecutorAgent } from "./agents/multi-executor-agent";
 import { personaCreatorAgent } from "./agents/persona-creator-agent";
 import { multiPersonaArgumentationWorkflow } from "./workflows/multi-persona-argumentation-workflow";
@@ -14,7 +13,6 @@ export const mastra = new Mastra({
     personaCreatorAgent,
     personaDeliberativeAgent,
     multiExecutorAgent,
-    judgePanelAgent,
   },
   storage: new LibSQLStore({
     // stores telemetry, evals, ... into memory storage, if it needs to persist, change to file:../mastra.db

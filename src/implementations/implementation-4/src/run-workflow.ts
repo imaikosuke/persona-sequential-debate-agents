@@ -84,7 +84,6 @@ async function main() {
         claims: Array<Claim>;
         attacks: Array<Attack>;
         stepCount: number;
-        convergenceHistory: number[];
         status: string;
       };
 
@@ -92,7 +91,6 @@ async function main() {
       console.log(`総ステップ数: ${output.stepCount}`);
       console.log(`生成された主張数: ${output.claims.length}`);
       console.log(`生成された攻撃数: ${output.attacks.length}`);
-      console.log(`収束履歴: ${output.convergenceHistory.join(", ")}`);
       console.log();
 
       if (output.argument) {

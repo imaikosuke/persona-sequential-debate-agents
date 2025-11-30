@@ -3,7 +3,6 @@ import { z } from "zod";
 
 import { selectDialogueActWithPersona } from "../../agents/deliberative-agent";
 import { generateFinalDocument } from "../../agents/final-writer-agent";
-import { evaluateDiscussionPanel } from "../../agents/judge-panel-agent";
 import { executeDialogueActWithPersona } from "../../agents/multi-executor-agent";
 import type { MultiPersonaBlackboard } from "../../types";
 import { DialogueAct } from "../../types";
@@ -77,12 +76,6 @@ export const deliberationLoopStep = createStep({
 
       // 直近の選択ペルソナを記録
       blackboard.meta.lastSelectedPersonaId = persona.id;
-
-      // パネル評価でメトリクス更新
-      const metrics = await evaluateDiscussionPanel(blackboard);
-      if (metrics) {
-        blackboard.meta.convergenceHistory.push(metrics.convergenceScore);
-      }
 
       // 合意レベル更新
       blackboard.consensusLevel = calculateConsensusLevel(blackboard);

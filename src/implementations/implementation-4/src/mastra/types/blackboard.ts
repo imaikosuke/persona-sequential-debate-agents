@@ -81,7 +81,6 @@ export interface BlackboardState {
     stepCount: number;
     tokenBudget: number;
     usedTokens: number;
-    convergenceHistory: number[];
     lastSelectedPersonaId?: string;
   };
 }

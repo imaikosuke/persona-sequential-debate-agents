@@ -170,11 +170,17 @@ function resolveAttacks(
 /**
  * 信念度の動的更新
  * 反論を受けた主張の信念度を下げ、再反論で守られた主張の信念度を上げる
+ * Implementation 4と同じロジックを使用（逐次討論の仕組みを統一評価するため）
+ * - 初期の主張（最初の3件）には最低限の信念度0.3を保証
+ * - 未解決の重大な反論: 最初の反論は-0.1、2つ目以降は-0.05、最大で-0.3まで
+ * - 未解決の軽微な反論: -0.03 × 件数
+ * - 解決済みの反論: +0.02 × 件数
+ * - 支持する主張: +0.05 × 件数
  */
 function updateConfidence(claim: Claim, attacks: Attack[], supports: Claim[]): number {
   let confidence = claim.confidence;
 
-  // 初期の主張（最初の5件）には最低限の信念度を保証
+  // 初期の主張（最初の3件）には最低限の信念度を保証
   const isInitialClaim = claim.createdAt <= 3;
   const minConfidence = isInitialClaim ? 0.3 : 0.0;
 
