@@ -193,7 +193,7 @@ ${
 出力形式（JSON）:
 \`\`\`json
 {
-  "dialogueAct": "propose" | "critique" | "question" | "fact_check" | "synthesize" | "plan" | "finalize",
+  "dialogueAct": "propose" | "critique" | "finalize",
   "selectedPersonaId": "persona-id",
   "reasoning": "選択理由",
   "expectedUtility": {
@@ -271,8 +271,7 @@ ${unresolvedAttacksText}
 - 常にJSON形式
 - 新規主張には { personaContext: { personaId } } を含める
 - 必要に応じて crossReferences を生成する（support/challenge/clarification）
-- critique/challenge の場合: newAttacks を最低1件以上必ず生成し、既存の claimId を toClaimId に指定すること（severity と description を明記）
-- fact_check の場合: 事実確認の要点を newClaims に反映し、可能なら crossReferences を追加すること
+- critique の場合: newAttacks を最低1件以上必ず生成し、既存の claimId を toClaimId に指定すること（severity と description を明記）
 - **1回のアクションで追加できる主張は1〜2個まで**
 出力フォーマット（JSONの例）:
 \`\`\`json

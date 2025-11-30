@@ -84,36 +84,27 @@ interface Persona {
 3. **役割バランス**: EXPERT, CRITIC, SYNTHESIZER を基本セットとして確保
 4. **動的調整**: 議論の進行に応じてペルソナの追加・交代を検討
 
-## 対話行為（Implementation-3から拡張）
+## 対話行為（Implementation-3と同じ）
 
 ```typescript
 enum DialogueAct {
-  // 基本行為（Implementation-3から継承）
-  PROPOSE = "propose",
-  CRITIQUE = "critique",
-  QUESTION = "question",
-  FACT_CHECK = "fact_check",
-  SYNTHESIZE = "synthesize",
-  PLAN = "plan",
-  FINALIZE = "finalize",
-
-  // ペルソナ間相互作用（新規）
-  CROSS_REFERENCE = "cross_reference", // 他ペルソナの主張を参照
-  CHALLENGE = "challenge", // 他ペルソナへの挑戦
-  SUPPORT = "support", // 他ペルソナへの支援
-  REFRAME = "reframe", // 視点の転換提案
+  PROPOSE = "propose",   // 新しい主張の追加
+  CRITIQUE = "critique", // 既存主張への反論
+  FINALIZE = "finalize", // 議論の終了
 }
 ```
+
+**注**: Implementation 4では、Implementation 3と同様に3つの基本対話行為のみを使用する。将来的には、QUESTION、FACT_CHECK、SYNTHESIZE、PLANなどの対話行為を追加する予定であるが、本研究では基本対話行為のみを使用する。
 
 ### ペルソナ固有の対話行為選択
 
 各ペルソナは、その特性に応じて対話行為の選択傾向が異なる：
 
-- **EXPERT**: PROPOSE, FACT_CHECK を優先
-- **CRITIC**: CRITIQUE, CHALLENGE を優先
-- **SYNTHESIZER**: SYNTHESIZE, CROSS_REFERENCE を優先
-- **ADVOCATE**: PROPOSE, SUPPORT を優先
-- **MODERATOR**: PLAN, REFRAME を優先
+- **専門家タイプ**: PROPOSE を優先（新しい主張の追加）
+- **批評者タイプ**: CRITIQUE を優先（既存主張への反論）
+- **統合者タイプ**: PROPOSE と CRITIQUE のバランスを取る
+
+**注**: 現在の実装では3つの基本対話行為のみを使用するため、ペルソナの特性は主に主張や反論の内容に反映される。
 
 ## ブラックボード（Multi-Persona対応）
 

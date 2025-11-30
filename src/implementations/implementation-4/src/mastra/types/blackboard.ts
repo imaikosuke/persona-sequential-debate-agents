@@ -3,17 +3,9 @@
  */
 
 export enum DialogueAct {
-  PROPOSE = "propose",
-  CRITIQUE = "critique",
-  QUESTION = "question",
-  FACT_CHECK = "fact_check",
-  SYNTHESIZE = "synthesize",
-  PLAN = "plan",
-  FINALIZE = "finalize",
-  CROSS_REFERENCE = "cross_reference",
-  CHALLENGE = "challenge",
-  SUPPORT = "support",
-  REFRAME = "reframe",
+  PROPOSE = "propose",   // 新しい主張の追加
+  CRITIQUE = "critique", // 既存主張への反論
+  FINALIZE = "finalize", // 議論の終了
 }
 
 export interface Claim {
