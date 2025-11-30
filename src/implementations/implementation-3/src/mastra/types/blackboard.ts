@@ -4,10 +4,11 @@
  */
 
 /**
- * 対話行為の種類（簡略化版）
+ * 対話行為の種類
  */
 export enum DialogueAct {
-  ADD_ARGUMENT = "add_argument", // 新しい主張を追加、または既存主張に反論
+  PROPOSE = "propose", // 新しい主張の追加
+  CRITIQUE = "critique", // 既存主張への反論
   FINALIZE = "finalize", // 議論を終了し最終文書を生成
 }
 
@@ -73,15 +74,39 @@ export interface BlackboardState {
 }
 
 /**
- * 議論アクション（簡略化版）
- * 決定と実行を統合したアクション
+ * 対話行為の決定結果
+ * DeliberativeAgentが生成する
+ */
+export interface DialogueActDecision {
+  dialogueAct: DialogueAct;
+  reasoning: string;
+  expectedUtility?: {
+    persuasivenessGain: number;
+    novelty: number;
+    uncertaintyReduction: number;
+    cost: number;
+  };
+  targetClaimIds?: string[];
+  shouldFinalize: boolean;
+  convergenceAnalysis?: {
+    beliefConvergence: number;
+    noveltyRate: number;
+    unresolvedCriticalAttacks: number;
+  };
+}
+
+/**
+ * 議論アクション（後方互換性のため残す）
+ * @deprecated 決定と実行を分離したため、DialogueActDecisionとExecutionResultを使用してください
  */
 export interface DebateAction {
   action: DialogueAct; // 実行するアクション
   reasoning: string; // 選択理由（簡潔に）
 
-  // ADD_ARGUMENTの場合
+  // PROPOSEの場合
   newClaims?: Claim[]; // 新しい主張
+
+  // CRITIQUEの場合
   newAttacks?: Attack[]; // 新しい反論（既存主張への攻撃）
 
   // FINALIZEの場合
@@ -89,19 +114,8 @@ export interface DebateAction {
 }
 
 /**
- * 対話行為の実行結果（簡略化版）
- * DebateActionから生成される
- */
-export interface ExecutionResult {
-  dialogueAct: DialogueAct;
-  newClaims?: Claim[];
-  newAttacks?: Attack[];
-  finalDocument?: string;
-}
-
-/**
- * 対話行為の実行結果（簡略化版）
- * DebateActionから生成される
+ * 対話行為の実行結果
+ * ExecutorAgentが生成する
  */
 export interface ExecutionResult {
   dialogueAct: DialogueAct;

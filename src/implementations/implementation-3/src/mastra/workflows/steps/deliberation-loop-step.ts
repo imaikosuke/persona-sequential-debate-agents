@@ -6,10 +6,10 @@
 import { createStep } from "@mastra/core/workflows";
 import { z } from "zod";
 
-import { decideAndExecute } from "../../agents/debate-agent";
+import { selectDialogueAct } from "../../agents/deliberative-agent";
+import { executeDialogueAct } from "../../agents/executor-agent";
 import { generateFinalDocument } from "../../prompts/final-document";
-import { DialogueAct } from "../../types";
-import type { BlackboardState } from "../../types/blackboard";
+import { type BlackboardState, DialogueAct } from "../../types";
 import { checkConvergence, updateBlackboard } from "../../utils/blackboard";
 
 /**
@@ -36,26 +36,40 @@ export const deliberationLoopStep = createStep({
       const stepNum = blackboard.meta.stepCount + 1;
       console.log(`\n=== ステップ ${stepNum} ===`);
 
-      // エージェントが次のアクションを決定・実行
-      console.log("次のアクションを決定・実行中...");
-      const action = await decideAndExecute(blackboard);
+      // 対話行為の選択（DeliberativeAgent）
+      console.log("次の対話行為を決定中...");
+      const decision = await selectDialogueAct(blackboard);
 
-      if (!action) {
-        console.error("アクションの決定に失敗しました");
+      if (!decision) {
+        console.error("対話行為の選択に失敗しました");
         break;
       }
 
-      console.log(`アクション: ${action.action}`);
-      console.log(`理由: ${action.reasoning}`);
+      console.log(`対話行為: ${decision.dialogueAct}`);
+      console.log(`理由: ${decision.reasoning}`);
+
+      // 対話行為の実行（ExecutorAgent）
+      console.log("対話行為を実行中...");
+      const execution = await executeDialogueAct(decision.dialogueAct, blackboard);
+
+      if (!execution) {
+        console.error("対話行為の実行に失敗しました");
+        break;
+      }
 
       // ブラックボードを更新（stepCountが増える）
-      blackboard = updateBlackboard(blackboard, action);
+      blackboard = updateBlackboard(blackboard, execution);
 
       // FINALIZEアクションの場合は終了
-      if (action.action === DialogueAct.FINALIZE) {
+      if (decision.dialogueAct === DialogueAct.FINALIZE || decision.shouldFinalize) {
         console.log("\n議論を終了します");
+        if (execution.finalDocument) {
+          blackboard.writepad.finalDraft = execution.finalDocument;
+        }
         break;
       }
+
+      // PROPOSEとCRITIQUEの場合はループを継続
 
       // アクション実行後の収束チェック
       const convergence = checkConvergence(blackboard, maxSteps);
@@ -64,15 +78,19 @@ export const deliberationLoopStep = createStep({
 
         // 最終文書を生成（確実に生成する）
         console.log("\n最終文書を生成中...");
-        const finalAction = await decideAndExecute(blackboard);
-        if (
-          finalAction &&
-          finalAction.action === DialogueAct.FINALIZE &&
-          finalAction.finalDocument
-        ) {
-          blackboard = updateBlackboard(blackboard, finalAction);
+        const finalDecision = await selectDialogueAct(blackboard);
+        if (finalDecision && finalDecision.dialogueAct === DialogueAct.FINALIZE) {
+          const finalExecution = await executeDialogueAct(DialogueAct.FINALIZE, blackboard);
+          if (finalExecution && finalExecution.finalDocument) {
+            blackboard = updateBlackboard(blackboard, finalExecution);
+          } else {
+            // FINALIZEアクションが生成されなかった場合、またはfinalDocumentがない場合、LLMで最終文書を生成
+            console.log("FINALIZEアクションが生成されなかったため、LLMで最終文書を生成します...");
+            const finalDocument = await generateFinalDocument(blackboard);
+            blackboard.writepad.finalDraft = finalDocument;
+          }
         } else {
-          // FINALIZEアクションが生成されなかった場合、またはfinalDocumentがない場合、LLMで最終文書を生成
+          // FINALIZEアクションが生成されなかった場合、LLMで最終文書を生成
           console.log("FINALIZEアクションが生成されなかったため、LLMで最終文書を生成します...");
           const finalDocument = await generateFinalDocument(blackboard);
           blackboard.writepad.finalDraft = finalDocument;
@@ -89,9 +107,17 @@ export const deliberationLoopStep = createStep({
     // 強制終了時にも最終文書を生成する
     if (blackboard.meta.stepCount >= maxSteps && !blackboard.writepad.finalDraft) {
       console.log("\n最大ステップ数に達したため、最終文書を生成します...");
-      const finalAction = await decideAndExecute(blackboard);
-      if (finalAction && finalAction.action === DialogueAct.FINALIZE && finalAction.finalDocument) {
-        blackboard = updateBlackboard(blackboard, finalAction);
+      const finalDecision = await selectDialogueAct(blackboard);
+      if (finalDecision && finalDecision.dialogueAct === DialogueAct.FINALIZE) {
+        const finalExecution = await executeDialogueAct(DialogueAct.FINALIZE, blackboard);
+        if (finalExecution && finalExecution.finalDocument) {
+          blackboard = updateBlackboard(blackboard, finalExecution);
+        } else {
+          // FINALIZEアクションが生成されなかった場合、LLMで最終文書を生成
+          console.log("FINALIZEアクションが生成されなかったため、LLMで最終文書を生成します...");
+          const finalDocument = await generateFinalDocument(blackboard);
+          blackboard.writepad.finalDraft = finalDocument;
+        }
       } else {
         // FINALIZEアクションが生成されなかった場合、LLMで最終文書を生成
         console.log("FINALIZEアクションが生成されなかったため、LLMで最終文書を生成します...");

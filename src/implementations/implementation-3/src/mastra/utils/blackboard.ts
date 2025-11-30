@@ -2,7 +2,14 @@
  * Implementation 3: ブラックボード操作ユーティリティ
  */
 
-import type { Attack, BlackboardState, Claim, DebateAction, StanceAnalysis } from "../types";
+import type {
+  Attack,
+  BlackboardState,
+  Claim,
+  DebateAction,
+  ExecutionResult,
+  StanceAnalysis,
+} from "../types";
 
 /**
  * ブラックボードの初期化（簡略化版）
@@ -203,9 +210,17 @@ function updateConfidence(claim: Claim, attacks: Attack[], supports: Claim[]): n
  */
 export function updateBlackboard(
   blackboard: BlackboardState,
-  action: DebateAction,
+  action: DebateAction | ExecutionResult,
   estimatedTokens = 500,
 ): BlackboardState {
+  // ExecutionResultをDebateAction形式に変換
+  const debateAction: DebateAction = {
+    action: "dialogueAct" in action ? action.dialogueAct : action.action,
+    reasoning: "reasoning" in action ? action.reasoning : "",
+    newClaims: action.newClaims,
+    newAttacks: action.newAttacks,
+    finalDocument: action.finalDocument,
+  };
   const updated: BlackboardState = {
     ...blackboard,
     meta: {
@@ -216,13 +231,13 @@ export function updateBlackboard(
   };
 
   // 新しい主張を追加
-  if (action.newClaims) {
+  if (debateAction.newClaims) {
     // 既存の主張IDを取得
     const existingClaimIds = new Set(updated.claims.map(c => c.id));
 
     // 新しい主張に一意のIDを割り当て、テキストをクリーンアップ
     let claimCounter = updated.claims.length + 1;
-    const newClaimsWithTimestamp = action.newClaims.map(claim => {
+    const newClaimsWithTimestamp = debateAction.newClaims.map(claim => {
       // IDが重複している場合、またはIDが指定されていない場合は自動生成
       let claimId = claim.id;
       if (!claimId || existingClaimIds.has(claimId)) {
@@ -249,12 +264,12 @@ export function updateBlackboard(
   }
 
   // 新しい攻撃を追加（重複チェック付き）
-  if (action.newAttacks) {
+  if (debateAction.newAttacks) {
     // 既存の攻撃IDを取得
     const existingAttackIds = new Set(updated.attacks.map(a => a.id));
 
     // 重複を除外
-    const uniqueNewAttacks = action.newAttacks.filter(
+    const uniqueNewAttacks = debateAction.newAttacks.filter(
       newAttack => !checkDuplicateAttack(newAttack, updated.attacks),
     );
 
@@ -280,13 +295,13 @@ export function updateBlackboard(
     updated.attacks = [...updated.attacks, ...newAttacksWithDefaults];
 
     // 反論解決メカニズムを実行
-    const resolved = resolveAttacks(updated, action.newClaims || [], newAttacksWithDefaults);
+    const resolved = resolveAttacks(updated, debateAction.newClaims || [], newAttacksWithDefaults);
     updated.attacks = resolved.attacks;
   }
 
   // 反論解決メカニズムを実行（新しい主張のみの場合）
-  if (action.newClaims && !action.newAttacks) {
-    const resolved = resolveAttacks(updated, action.newClaims, []);
+  if (debateAction.newClaims && !debateAction.newAttacks) {
+    const resolved = resolveAttacks(updated, debateAction.newClaims, []);
     updated.attacks = resolved.attacks;
   }
 
@@ -309,8 +324,8 @@ export function updateBlackboard(
   });
 
   // 最終文書を設定
-  if (action.finalDocument) {
-    updated.writepad.finalDraft = action.finalDocument;
+  if (debateAction.finalDocument) {
+    updated.writepad.finalDraft = debateAction.finalDocument;
   }
 
   return updated;
