@@ -5,7 +5,7 @@
 
 import { Mastra } from "@mastra/core";
 
-import { debateAgent, deliberativeAgent, executorAgent } from "./agents";
+import { deliberativeAgent, executorAgent } from "./agents";
 import { argumentationWorkflow } from "./workflows";
 
 /**
@@ -15,7 +15,6 @@ export const mastra = new Mastra({
   agents: {
     deliberativeAgent,
     executorAgent,
-    debateAgent, // 後方互換性のため残す（非推奨）
   },
   workflows: {
     argumentationWorkflow,

@@ -319,22 +319,6 @@ export async function updateBlackboard(
 }
 
 /**
- * 主張の平均信念度を計算（削除予定 - 使用されていない）
- */
-export function calculateAverageConfidence(claims: Claim[]): number {
-  if (claims.length === 0) return 0;
-  const total = claims.reduce((sum, claim) => sum + claim.confidence, 0);
-  return total / claims.length;
-}
-
-/**
- * 未解決の致命的攻撃数を計算（削除予定 - 使用されていない）
- */
-export function countCriticalUnresolvedAttacks(blackboard: BlackboardState): number {
-  return blackboard.attacks.filter(a => !a.resolved && a.severity === "critical").length;
-}
-
-/**
  * 収束条件のチェック（厳格化版）
  */
 export function checkConvergence(
