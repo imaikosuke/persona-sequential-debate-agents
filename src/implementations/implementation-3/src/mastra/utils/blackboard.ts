@@ -5,14 +5,7 @@
 import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
-import type {
-  Attack,
-  BlackboardState,
-  Claim,
-  DebateAction,
-  ExecutionResult,
-  StanceAnalysis,
-} from "../types";
+import type { Attack, BlackboardState, Claim, ExecutionResult, StanceAnalysis } from "../types";
 
 /**
  * ブラックボードの初期化（簡略化版）
@@ -193,17 +186,9 @@ function updateConfidence(claim: Claim, attacks: Attack[], supports: Claim[]): n
  */
 export async function updateBlackboard(
   blackboard: BlackboardState,
-  action: DebateAction | ExecutionResult,
+  action: ExecutionResult,
   estimatedTokens = 500,
 ): Promise<BlackboardState> {
-  // ExecutionResultをDebateAction形式に変換
-  const debateAction: DebateAction = {
-    action: "dialogueAct" in action ? action.dialogueAct : action.action,
-    reasoning: "reasoning" in action ? action.reasoning : "",
-    newClaims: action.newClaims,
-    newAttacks: action.newAttacks,
-    finalDocument: action.finalDocument,
-  };
   const updated: BlackboardState = {
     ...blackboard,
     meta: {
@@ -214,45 +199,57 @@ export async function updateBlackboard(
   };
 
   // 新しい主張を追加
-  if (debateAction.newClaims) {
+  if (action.newClaims && action.newClaims.length > 0) {
     // 既存の主張IDを取得
     const existingClaimIds = new Set(updated.claims.map(c => c.id));
 
     // 新しい主張に一意のIDを割り当て、テキストをクリーンアップ
     let claimCounter = updated.claims.length + 1;
-    const newClaimsWithTimestamp = debateAction.newClaims.map(claim => {
-      // IDが重複している場合、またはIDが指定されていない場合は自動生成
-      let claimId = claim.id;
-      if (!claimId || existingClaimIds.has(claimId)) {
-        do {
-          claimId = `c${claimCounter}`;
-          claimCounter++;
-        } while (existingClaimIds.has(claimId));
-        existingClaimIds.add(claimId);
-      }
+    const newClaimsWithTimestamp = action.newClaims
+      .filter(claim => claim && claim.text) // textが存在するもののみ処理
+      .map(claim => {
+        // IDが重複している場合、またはIDが指定されていない場合は自動生成
+        let claimId = claim.id;
+        if (!claimId || existingClaimIds.has(claimId)) {
+          do {
+            claimId = `c${claimCounter}`;
+            claimCounter++;
+          } while (existingClaimIds.has(claimId));
+          existingClaimIds.add(claimId);
+        }
 
-      // テキストから不要な文字列を削除（例: "(信念度: 0.70)"）
-      let cleanedText = claim.text;
-      cleanedText = cleanedText.replace(/\s*\(信念度:\s*[\d.]+\)\s*/g, "").trim();
+        // テキストから不要な文字列を削除（例: "(信念度: 0.70)"）
+        let cleanedText = claim.text || "";
+        cleanedText = cleanedText.replace(/\s*\(信念度:\s*[\d.]+\)\s*/g, "").trim();
 
-      return {
-        ...claim,
-        id: claimId,
-        text: cleanedText,
-        createdAt: updated.meta.stepCount,
-        lastUpdated: updated.meta.stepCount,
-      };
-    });
+        return {
+          ...claim,
+          id: claimId,
+          text: cleanedText,
+          createdAt: updated.meta.stepCount,
+          lastUpdated: updated.meta.stepCount,
+        };
+      });
     updated.claims = [...updated.claims, ...newClaimsWithTimestamp];
   }
 
   // 新しい攻撃を追加（重複チェック付き）
-  if (debateAction.newAttacks) {
+  if (action.newAttacks && action.newAttacks.length > 0) {
     // 既存の攻撃IDを取得
     const existingAttackIds = new Set(updated.attacks.map(a => a.id));
 
+    // 有効な攻撃のみをフィルタリング（description、fromClaimId、toClaimIdが存在するもの）
+    const validAttacks = action.newAttacks.filter(
+      attack =>
+        attack &&
+        attack.description &&
+        attack.fromClaimId &&
+        attack.toClaimId &&
+        typeof attack.description === "string",
+    );
+
     // 重複を除外
-    const uniqueNewAttacks = debateAction.newAttacks.filter(
+    const uniqueNewAttacks = validAttacks.filter(
       newAttack => !checkDuplicateAttack(newAttack, updated.attacks),
     );
 
@@ -278,17 +275,13 @@ export async function updateBlackboard(
     updated.attacks = [...updated.attacks, ...newAttacksWithDefaults];
 
     // 反論解決メカニズムを実行
-    const resolved = await resolveAttacks(
-      updated,
-      debateAction.newClaims || [],
-      newAttacksWithDefaults,
-    );
+    const resolved = await resolveAttacks(updated, action.newClaims || [], newAttacksWithDefaults);
     updated.attacks = resolved.attacks;
   }
 
   // 反論解決メカニズムを実行（新しい主張のみの場合）
-  if (debateAction.newClaims && !debateAction.newAttacks) {
-    const resolved = await resolveAttacks(updated, debateAction.newClaims, []);
+  if (action.newClaims && !action.newAttacks) {
+    const resolved = await resolveAttacks(updated, action.newClaims, []);
     updated.attacks = resolved.attacks;
   }
 
@@ -311,8 +304,8 @@ export async function updateBlackboard(
   });
 
   // 最終文書を設定
-  if (debateAction.finalDocument) {
-    updated.writepad.finalDraft = debateAction.finalDocument;
+  if (action.finalDocument) {
+    updated.writepad.finalDraft = action.finalDocument;
   }
 
   return updated;
@@ -337,9 +330,9 @@ export function checkConvergence(
   }
 
   // 最小条件チェック（厳格化）
-  const minClaims = 5;
-  const minAttacks = 3; // 1から3に引き上げ
-  const minSteps = 4; // 最低ステップ数を4に引き上げ（議論の深さを確保）
+  const minClaims = 6; // 5から6に引き上げ（より多様な議論を確保）
+  const minAttacks = 4; // 3から4に引き上げ（より深い議論を確保）
+  const minSteps = 5; // 4から5に引き上げ（議論の深さを確保）
 
   // 最低ステップ数チェック（逐次討論の効果を確保）
   if (blackboard.meta.stepCount < minSteps) {

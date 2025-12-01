@@ -12,13 +12,10 @@ import type { BlackboardState, Claim, DialogueAct, ExecutionResult } from "../ty
 import { extractJSON } from "../utils/blackboard";
 
 /**
- * ExecutorAgent
- *
- * 選択された対話行為を実行するエージェント
+ * ExecutorAgentのinstructions
+ * （AgentインスタンスはMastraに登録するために必要だが、実際の処理では直接使用しない）
  */
-export const executorAgent = new Agent({
-  name: "Executor Agent",
-  instructions: `
+const EXECUTOR_AGENT_INSTRUCTIONS = `
 あなたは対話行為を実行するエージェントです。
 
 **逐次討論の原則:**
@@ -40,7 +37,17 @@ export const executorAgent = new Agent({
 **出力要件:**
 - 常にJSON形式で出力してください
 - **重複反論の防止**: 既存の反論と同じ内容の反論を生成しないでください
-`,
+`;
+
+/**
+ * ExecutorAgent
+ *
+ * 選択された対話行為を実行するエージェント
+ * （Mastraに登録するために必要）
+ */
+export const executorAgent = new Agent({
+  name: "Executor Agent",
+  instructions: EXECUTOR_AGENT_INSTRUCTIONS,
   model: openai("gpt-4o-mini"),
   defaultGenerateOptions: {
     toolChoice: "none",
@@ -59,20 +66,12 @@ export async function executeDialogueAct(
   const prompt = buildExecutionPrompt(act, blackboard);
 
   try {
-    const instructions = await executorAgent.getInstructions();
-    const instructionsText =
-      typeof instructions === "string"
-        ? instructions
-        : Array.isArray(instructions)
-          ? instructions.map(i => (typeof i === "string" ? i : i.content)).join("\n")
-          : instructions.content;
-
     const result = await generateText({
       model: openai("gpt-4o-mini"),
       messages: [
         {
           role: "system",
-          content: instructionsText,
+          content: EXECUTOR_AGENT_INSTRUCTIONS,
         },
         {
           role: "user",

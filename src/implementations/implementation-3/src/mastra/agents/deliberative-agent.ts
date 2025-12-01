@@ -12,17 +12,26 @@ import type { BlackboardState, DialogueActDecision } from "../types";
 import { extractJSON } from "../utils/blackboard";
 
 /**
+ * DeliberativeAgentのinstructions
+ * （AgentインスタンスはMastraに登録するために必要だが、実際の処理では直接使用しない）
+ */
+const DELIBERATIVE_AGENT_INSTRUCTIONS = `
+あなたは議論の熟考エージェントです。
+- 現在の議論状態を分析し、次に取るべき対話行為を選択してください
+- 反論率が低い場合（30%未満）、既存の主張への反論（CRITIQUE）を優先的に選択してください
+- 主張数が3つ以上ある場合、新しい主張（PROPOSE）よりも反論（CRITIQUE）を優先してください
+- JSON形式で返してください
+`;
+
+/**
  * DeliberativeAgent
  *
  * ブラックボード状態を分析し、次の対話行為を選択するエージェント
+ * （Mastraに登録するために必要）
  */
 export const deliberativeAgent = new Agent({
   name: "Deliberative Agent",
-  instructions: `
-あなたは議論の熟考エージェントです。
-- 現在の議論状態を分析し、次に取るべき対話行為を選択してください
-- JSON形式で返してください
-`,
+  instructions: DELIBERATIVE_AGENT_INSTRUCTIONS,
   model: openai("gpt-4o-mini"),
   defaultGenerateOptions: {
     toolChoice: "none",
@@ -40,20 +49,12 @@ export async function selectDialogueAct(
   const prompt = buildDeliberationPrompt(blackboard);
 
   try {
-    const instructions = await deliberativeAgent.getInstructions();
-    const instructionsText =
-      typeof instructions === "string"
-        ? instructions
-        : Array.isArray(instructions)
-          ? instructions.map(i => (typeof i === "string" ? i : i.content)).join("\n")
-          : instructions.content;
-
     const result = await generateText({
       model: openai("gpt-4o-mini"),
       messages: [
         {
           role: "system",
-          content: instructionsText,
+          content: DELIBERATIVE_AGENT_INSTRUCTIONS,
         },
         {
           role: "user",

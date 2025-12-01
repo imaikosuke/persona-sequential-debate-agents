@@ -21,7 +21,6 @@ src/
 │   ├── agents/                    # エージェント定義
 │   │   ├── deliberative-agent.ts  # 熟考エージェント（対話行為選択）
 │   │   ├── executor-agent.ts      # 実行エージェント（対話行為実行）
-│   │   ├── judge-agent.ts         # 判定エージェント（議論評価）
 │   │   └── index.ts               # エージェントエクスポート
 │   ├── prompts/
 │   │   └── index.ts               # プロンプト生成関数
@@ -35,7 +34,6 @@ src/
 │   │   │   ├── initialize-step.ts         # 初期化ステップ
 │   │   │   ├── deliberation-loop-step.ts  # 討論ループステップ
 │   │   │   ├── finalize-step.ts           # 最終化ステップ
-│   │   │   ├── logging.ts                 # ログ出力ヘルパー
 │   │   │   └── index.ts                   # ステップエクスポート
 │   │   ├── argumentation-workflow.ts      # ワークフロー定義
 │   │   └── index.ts                       # ワークフローエクスポート
@@ -57,10 +55,7 @@ src/
    - 新しい主張や反論を生成
    - ブラックボード更新用のデータを生成
 
-3. **JudgeAgent（判定エージェント）**
-   - 議論の質と進捗を評価
-   - 収束度、新規性、攻撃解決率を算出
-   - 収束スコアを提供
+（注: 収束判定は `checkConvergence` 関数で実装されており、JudgeAgentは存在しません）
 
 ### ワークフロー
 

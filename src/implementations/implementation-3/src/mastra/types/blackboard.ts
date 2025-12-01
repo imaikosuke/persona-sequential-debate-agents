@@ -96,24 +96,6 @@ export interface DialogueActDecision {
 }
 
 /**
- * 議論アクション（後方互換性のため残す）
- * @deprecated 決定と実行を分離したため、DialogueActDecisionとExecutionResultを使用してください
- */
-export interface DebateAction {
-  action: DialogueAct; // 実行するアクション
-  reasoning: string; // 選択理由（簡潔に）
-
-  // PROPOSEの場合
-  newClaims?: Claim[]; // 新しい主張
-
-  // CRITIQUEの場合
-  newAttacks?: Attack[]; // 新しい反論（既存主張への攻撃）
-
-  // FINALIZEの場合
-  finalDocument?: string; // 最終文書
-}
-
-/**
  * 対話行為の実行結果
  * ExecutorAgentが生成する
  */
