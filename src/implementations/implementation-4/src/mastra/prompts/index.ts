@@ -242,7 +242,6 @@ ${formatAttacks(blackboard)}
       "personaContext": { "personaId": "${persona.id}" }
     }
   ],
-  "updatedClaims": [],
   "newAttacks": [
     {
       "id": "aX",

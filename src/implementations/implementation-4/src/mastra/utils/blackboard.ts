@@ -82,13 +82,6 @@ export function updateBlackboard(
     }
   }
 
-  if (executionResult.updatedClaims?.length) {
-    const map = new Map(executionResult.updatedClaims.map(c => [c.id, c]));
-    updated.claims = updated.claims.map(c =>
-      map.has(c.id) ? { ...c, ...map.get(c.id)!, lastUpdated: updated.meta.stepCount } : c,
-    );
-  }
-
   if (executionResult.newAttacks?.length) {
     // 既存の攻撃IDを取得
     const existingAttackIds = new Set(updated.attacks.map(a => a.id));

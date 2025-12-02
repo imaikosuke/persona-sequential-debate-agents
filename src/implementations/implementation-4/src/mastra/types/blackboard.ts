@@ -93,7 +93,6 @@ export interface DialogueActDecision {
 export interface ExecutionResult {
   dialogueAct: DialogueAct;
   newClaims?: Claim[];
-  updatedClaims?: Claim[];
   newAttacks?: Attack[];
   finalDocument?: string;
   crossReferences?: CrossReference[];
