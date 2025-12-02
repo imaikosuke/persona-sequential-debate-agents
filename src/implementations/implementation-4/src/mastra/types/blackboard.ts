@@ -29,19 +29,6 @@ export interface Attack {
   description: string;
 }
 
-export interface Question {
-  id: string;
-  text: string;
-  targetClaimId?: string;
-  priority: "high" | "medium" | "low";
-}
-
-export interface Plan {
-  currentFocus: string;
-  nextSteps: string[];
-  avoidTopics: string[];
-}
-
 export interface CrossReference {
   id: string;
   fromPersonaId: string;
@@ -62,8 +49,6 @@ export interface BlackboardState {
   topic: string;
   claims: Claim[];
   attacks: Attack[];
-  questions: Question[];
-  plan: Plan;
   meta: {
     stepCount: number;
     tokenBudget: number;
@@ -110,8 +95,6 @@ export interface ExecutionResult {
   newClaims?: Claim[];
   updatedClaims?: Claim[];
   newAttacks?: Attack[];
-  newQuestions?: Question[];
-  updatedPlan?: Partial<Plan>;
   finalDocument?: string;
   crossReferences?: CrossReference[];
 }

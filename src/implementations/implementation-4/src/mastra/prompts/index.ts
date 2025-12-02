@@ -86,18 +86,6 @@ ${claimsText}
 ### 攻撃（Attacks）
 ${attacksText}
 
-### 質問
-${
-  blackboard.questions.length > 0
-    ? blackboard.questions.map(q => `- [${q.priority}] ${q.text}`).join("\n")
-    : "（質問はありません）"
-}
-
-### 計画
-- 注力点: ${blackboard.plan.currentFocus}
-- 次のステップ: ${blackboard.plan.nextSteps.join(", ")}
-- 避けるべきトピック: ${blackboard.plan.avoidTopics.join(", ") || "なし"}
-
 ### クロスリファレンス
 ${
   blackboard.crossReferences
@@ -265,8 +253,6 @@ ${formatAttacks(blackboard)}
       "description": "反論の内容"
     }
   ],
-  "newQuestions": [],
-  "updatedPlan": {},
   "finalDocument": "",
   "crossReferences": [
     {

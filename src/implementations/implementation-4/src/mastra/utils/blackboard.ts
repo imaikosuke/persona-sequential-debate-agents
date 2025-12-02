@@ -32,12 +32,6 @@ export function initializeBlackboard(
     topic,
     claims: [],
     attacks: [],
-    questions: [],
-    plan: {
-      currentFocus: `トピック「${topic}」に対する初期の主張を構築する`,
-      nextSteps: ["トピックに関連する主要な主張を提案する", "主張の根拠を明確にする"],
-      avoidTopics: [],
-    },
     meta: {
       stepCount: 0,
       tokenBudget,
@@ -127,10 +121,6 @@ export function updateBlackboard(
 
   if (executionResult.crossReferences?.length) {
     updated.crossReferences = [...updated.crossReferences, ...executionResult.crossReferences];
-  }
-
-  if (executionResult.updatedPlan) {
-    updated.plan = { ...updated.plan, ...executionResult.updatedPlan };
   }
 
   // finalDocumentはExecutionResultに含まれるが、writepadがないため保存しない
