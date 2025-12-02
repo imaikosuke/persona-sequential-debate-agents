@@ -43,7 +43,6 @@ interface WorkflowResult {
     type: string;
     severity: string;
     description: string;
-    resolved: boolean;
   }>;
   stepCount: number;
   status: string;

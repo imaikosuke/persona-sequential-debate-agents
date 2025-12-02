@@ -21,7 +21,7 @@ async function ensureFinalDocument(blackboard: BlackboardState): Promise<Blackbo
   if (finalDecision && finalDecision.dialogueAct === DialogueAct.FINALIZE) {
     const finalExecution = await executeDialogueAct(DialogueAct.FINALIZE, blackboard);
     if (finalExecution && finalExecution.finalDocument) {
-      return await updateBlackboard(blackboard, finalExecution);
+      return updateBlackboard(blackboard, finalExecution);
     }
   }
 
@@ -83,7 +83,7 @@ export const deliberationLoopStep = createStep({
       }
 
       // ブラックボードを更新（stepCountが増える）
-      blackboard = await updateBlackboard(blackboard, execution);
+      blackboard = updateBlackboard(blackboard, execution);
 
       // FINALIZEアクションの場合は終了
       if (decision.dialogueAct === DialogueAct.FINALIZE || decision.shouldFinalize) {
@@ -122,7 +122,7 @@ export const deliberationLoopStep = createStep({
     console.log(`ステップ数: ${blackboard.meta.stepCount}`);
     console.log(`主張数: ${blackboard.claims.length}`);
     console.log(`反論数: ${blackboard.attacks.length}`);
-    console.log(`未解決の反論: ${blackboard.attacks.filter(a => !a.resolved).length}件`);
+    console.log(`反論数: ${blackboard.attacks.length}件`);
 
     return {
       blackboard,

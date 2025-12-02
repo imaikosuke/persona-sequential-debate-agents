@@ -27,7 +27,6 @@ export interface Attack {
   type: "logic" | "evidence" | "relevance";
   severity: "critical" | "major" | "minor";
   description: string;
-  resolved: boolean;
 }
 
 export interface Question {
@@ -35,7 +34,6 @@ export interface Question {
   text: string;
   targetClaimId?: string;
   priority: "high" | "medium" | "low";
-  resolved: boolean;
 }
 
 export interface Plan {
@@ -114,7 +112,6 @@ export interface DialogueActDecision {
   convergenceAnalysis: {
     beliefConvergence: number;
     noveltyRate: number;
-    unresolvedCriticalAttacks: number;
   };
   selectedPersonaId?: string;
 }
@@ -124,9 +121,7 @@ export interface ExecutionResult {
   newClaims?: Claim[];
   updatedClaims?: Claim[];
   newAttacks?: Attack[];
-  resolvedAttacks?: string[];
   newQuestions?: Question[];
-  resolvedQuestions?: string[];
   updatedPlan?: Partial<Plan>;
   updatedWritepad?: Partial<Writepad>;
   finalDocument?: string;

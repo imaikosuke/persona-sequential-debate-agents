@@ -33,9 +33,9 @@ function buildFinalWritingPrompt(blackboard: MultiPersonaBlackboard): string {
   const sortedClaims = [...blackboard.claims].sort((a, b) => b.confidence - a.confidence);
   const topClaims = sortedClaims.slice(0, 5);
 
-  // 重要な反論のみ抽出（未解決のもの、または重大度が高いもの）
+  // 重要な反論のみ抽出（重大度が高いもの）
   const importantAttacks = blackboard.attacks
-    .filter(a => !a.resolved || a.severity === "critical" || a.severity === "major")
+    .filter(a => a.severity === "critical" || a.severity === "major")
     .slice(0, 5);
 
   return `
@@ -115,7 +115,6 @@ export async function generateFinalDocument(blackboard: MultiPersonaBlackboard):
 function generateFallbackDocument(blackboard: MultiPersonaBlackboard): string {
   const stanceAnalysis = analyzeArgumentStances(blackboard);
   const sortedClaims = [...blackboard.claims].sort((a, b) => b.confidence - a.confidence);
-  const unresolvedAttacks = blackboard.attacks.filter(a => !a.resolved);
 
   // 主要な主張を抽出（信念度が高い順）
   const mainClaims = sortedClaims.slice(0, 5);
@@ -160,10 +159,6 @@ function generateFallbackDocument(blackboard: MultiPersonaBlackboard): string {
     document += `${blackboard.topic}については、適切な管理と教育により、その利点を活かすことができると考えます。`;
   } else {
     document += `${blackboard.topic}については、慎重な検討が必要ですが、適切な対策により、そのリスクを軽減できる可能性があります。`;
-  }
-
-  if (unresolvedAttacks.length > 0) {
-    document += `ただし、一部の論点については、さらなる検討が必要です。`;
   }
 
   return document;

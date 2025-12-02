@@ -117,7 +117,6 @@ interface BlackboardState {
     stepCount: number;
     tokenBudget: number;
     usedTokens: number;
-    convergenceHistory: number[];
   };
 }
 ```
@@ -169,7 +168,6 @@ _注: MVP版では3つの対話行為のみ実装。将来的にQUESTION、FACT_
     }
   ],
   stepCount: 7,
-  convergenceHistory: [0.3, 0.5, 0.65, 0.75, 0.8],
   status: "収束条件を満たして終了しました"
 }
 ```

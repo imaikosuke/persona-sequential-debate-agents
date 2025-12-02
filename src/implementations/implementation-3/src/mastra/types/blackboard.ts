@@ -36,7 +36,6 @@ export interface Attack {
   type: "logic" | "evidence" | "relevance"; // 攻撃の種類
   severity: "critical" | "major" | "minor"; // 重要度
   description: string; // 攻撃の内容
-  resolved: boolean; // 解決済みかどうか
 }
 
 /**
@@ -69,7 +68,6 @@ export interface BlackboardState {
     stepCount: number; // 現在のステップ数
     tokenBudget: number; // トークン予算
     usedTokens: number; // 使用済みトークン数
-    convergenceHistory: number[]; // 収束スコアの履歴
   };
 }
 
@@ -91,7 +89,6 @@ export interface DialogueActDecision {
   convergenceAnalysis?: {
     beliefConvergence: number;
     noveltyRate: number;
-    unresolvedCriticalAttacks: number;
   };
 }
 

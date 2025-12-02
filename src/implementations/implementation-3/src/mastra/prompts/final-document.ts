@@ -16,9 +16,9 @@ export function buildFinalDocumentPrompt(blackboard: BlackboardState): string {
   const sortedClaims = [...blackboard.claims].sort((a, b) => b.confidence - a.confidence);
   const topClaims = sortedClaims.slice(0, 5);
 
-  // 重要な反論のみ抽出（未解決のもの、または重大度が高いもの）
+  // 重要な反論のみ抽出（重大度が高いもの）
   const importantAttacks = blackboard.attacks
-    .filter(a => !a.resolved || a.severity === "critical" || a.severity === "major")
+    .filter(a => a.severity === "critical" || a.severity === "major")
     .slice(0, 5);
 
   return `

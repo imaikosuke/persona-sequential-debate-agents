@@ -3,9 +3,6 @@
  * Implementation-3の改善点を反映
  */
 
-import { openai } from "@ai-sdk/openai";
-import { generateText } from "ai";
-
 import type { Attack, Claim, ExecutionResult, MultiPersonaBlackboard } from "../types";
 
 /**
@@ -24,129 +21,6 @@ function checkDuplicateAttack(
         existing.description.includes(newAttack.description.substring(0, 20)) ||
         newAttack.description.includes(existing.description.substring(0, 20))),
   );
-}
-
-/**
- * JSONを抽出するヘルパー関数
- */
-function extractJSON<T>(text: string): T | null {
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    const match = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/```\s*([\s\S]*?)\s*```/);
-    if (match) {
-      try {
-        return JSON.parse(match[1]) as T;
-      } catch {
-        void 0;
-      }
-    }
-    const first = text.indexOf("{");
-    const last = text.lastIndexOf("}");
-    if (first !== -1 && last !== -1 && first < last) {
-      try {
-        return JSON.parse(text.slice(first, last + 1)) as T;
-      } catch {
-        void 0;
-      }
-    }
-    return null;
-  }
-}
-
-/**
- * LLMを使って反論解決を判定する
- * 新しい主張が既存の反論の論点を覆しているかを文脈を考慮して判定
- */
-async function checkAttackResolutionWithLLM(
-  newClaim: Claim,
-  existingAttack: Attack,
-): Promise<boolean> {
-  const prompt = `以下の新しい主張が、既存の反論の論点を覆しているか判定してください。
-
-**既存の反論:**
-${existingAttack.description}
-
-**新しい主張:**
-${newClaim.text}
-
-新しい主張が反論の論点を直接的に覆している、または反論で指摘された問題に対する解決策を提示している場合、trueを返してください。
-単に異なる視点を提示しているだけの場合はfalseを返してください。
-
-JSON形式で回答してください:
-{"resolved": true または false}`;
-
-  try {
-    const result = await generateText({
-      model: openai("gpt-4o-mini"),
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.3,
-      maxTokens: 100,
-    });
-
-    const json = extractJSON<{ resolved: boolean }>(result.text);
-    return json?.resolved ?? false;
-  } catch (error) {
-    console.error("Error in checkAttackResolutionWithLLM:", error);
-    return false;
-  }
-}
-
-/**
- * 反論解決メカニズム
- * 新しい反論や主張が既存の反論を解決するかチェック
- * Implementation 3と同じロジックを使用（LLMベースの判定）
- */
-async function resolveAttacks(
-  blackboard: MultiPersonaBlackboard,
-  newClaims: Claim[],
-  newAttacks: Attack[],
-): Promise<MultiPersonaBlackboard> {
-  const updated = { ...blackboard, attacks: [...blackboard.attacks] };
-
-  // 段階1: 新しい反論が既存の反論の fromClaimId を攻撃する場合、
-  // 元の反論を「反論された」とマーク（構造的な解決）
-  for (const newAttack of newAttacks) {
-    // 新しい反論が既存の反論の元主張（fromClaimId）を攻撃している場合
-    const attackedAttacks = updated.attacks.filter(
-      existing => existing.fromClaimId === newAttack.toClaimId && !existing.resolved,
-    );
-
-    for (const attackedAttack of attackedAttacks) {
-      // 反論の元主張が攻撃された場合、その反論を「反論された」とマーク
-      // これは完全な解決ではないが、議論が深まったことを示す
-      if (attackedAttack.severity === "minor") {
-        attackedAttack.resolved = true;
-      } else if (attackedAttack.severity === "major") {
-        // major の場合は、より積極的に解決済みにする
-        // 新しい反論が既存の反論の元主張を攻撃している場合、基本的に解決済みとみなす
-        attackedAttack.resolved = true;
-      }
-    }
-  }
-
-  // 段階2: 新しい主張が既存の反論の論点を直接的に覆す場合、LLMで判定
-  for (const newClaim of newClaims) {
-    // 未解決の反論のみをチェック
-    const unresolvedAttacks = updated.attacks.filter(
-      a => !a.resolved && (a.severity === "minor" || a.severity === "major"),
-    );
-
-    for (const existingAttack of unresolvedAttacks) {
-      // LLMで反論解決を判定
-      const isResolved = await checkAttackResolutionWithLLM(newClaim, existingAttack);
-      if (isResolved) {
-        existingAttack.resolved = true;
-      }
-    }
-  }
-
-  return updated;
 }
 
 export function initializeBlackboard(
@@ -190,11 +64,11 @@ export function initializeBlackboard(
   };
 }
 
-export async function updateBlackboard(
+export function updateBlackboard(
   blackboard: MultiPersonaBlackboard,
   executionResult: ExecutionResult,
   estimatedTokens = 500,
-): Promise<MultiPersonaBlackboard> {
+): MultiPersonaBlackboard {
   const updated: MultiPersonaBlackboard = {
     ...blackboard,
     meta: {
@@ -250,23 +124,9 @@ export async function updateBlackboard(
       return {
         ...attack,
         id: attackId,
-        resolved: false,
       };
     });
     updated.attacks = [...updated.attacks, ...newAttacksWithDefaults];
-
-    // 反論解決メカニズムを実行
-    const resolved = await resolveAttacks(
-      updated,
-      executionResult.newClaims || [],
-      newAttacksWithDefaults,
-    );
-    updated.attacks = resolved.attacks;
-  }
-
-  if (executionResult.resolvedAttacks?.length) {
-    const resolved = new Set(executionResult.resolvedAttacks);
-    updated.attacks = updated.attacks.map(a => (resolved.has(a.id) ? { ...a, resolved: true } : a));
   }
 
   if (executionResult.crossReferences?.length) {
@@ -285,12 +145,6 @@ export async function updateBlackboard(
     updated.writepad.finalDraft = executionResult.finalDocument;
   }
 
-  // 反論解決メカニズムを実行（新しい主張のみの場合）
-  if (executionResult.newClaims && !executionResult.newAttacks) {
-    const resolved = await resolveAttacks(updated, executionResult.newClaims, []);
-    updated.attacks = resolved.attacks;
-  }
-
   return updated;
 }
 
@@ -304,8 +158,8 @@ export function calculateSupportRate(
 
 export function calculateConflictRate(attacks: Attack[]): number {
   if (attacks.length === 0) return 0;
-  const unresolved = attacks.filter(a => !a.resolved).length;
-  return unresolved / attacks.length;
+  // 反論の存在自体が対立を示すため、常に1.0を返す
+  return 1.0;
 }
 
 export function calculateConvergence(claims: Claim[]): number {
@@ -419,20 +273,6 @@ export function checkConvergence(
     };
   }
 
-  // 未解決の重要な反論をチェック
-  const unresolvedMajorAttacks = blackboard.attacks.filter(
-    a => !a.resolved && (a.severity === "critical" || a.severity === "major"),
-  ).length;
-
-  // 未解決の重要な反論が多すぎる場合は継続
-  // 閾値を2件から5件に緩和（反論解決メカニズムの改善により、より多くの反論が解決されることを期待）
-  if (unresolvedMajorAttacks > 5) {
-    return {
-      shouldFinalize: false,
-      reason: `未解決の重要な反論が多すぎます（${unresolvedMajorAttacks}件）。これらへの再反論が必要です。`,
-    };
-  }
-
   // 収束条件を満たしている
   return {
     shouldFinalize: true,
@@ -444,9 +284,8 @@ export function checkConvergence(
  * 攻撃・クロス参照に基づく信念度の再計算（ヒューリスティック）
  * Implementation 3と同じロジックを使用（逐次討論の仕組みを統一評価するため）
  * - 初期の主張（最初の3件）には最低限の信念度0.3を保証
- * - 未解決の重大な反論: 最初の反論は-0.1、2つ目以降は-0.05、最大で-0.3まで
- * - 未解決の軽微な反論: -0.03 × 件数
- * - 解決済みの反論: +0.02 × 件数
+ * - 重大な反論: 最初の反論は-0.1、2つ目以降は-0.05、最大で-0.3まで
+ * - 軽微な反論: -0.03 × 件数
  * - 支持する主張: +0.05 × 件数（クロス参照からカウント）
  */
 export function recalcClaimConfidences(blackboard: MultiPersonaBlackboard): MultiPersonaBlackboard {
@@ -473,8 +312,7 @@ export function recalcClaimConfidences(blackboard: MultiPersonaBlackboard): Mult
     const minConfidence = isInitialClaim ? 0.3 : 0.0;
 
     const targeted = attacksByTarget.get(c.id) ?? [];
-    const unresolvedMinorAttacks = targeted.filter(a => !a.resolved && a.severity === "minor");
-    const resolvedAttacks = targeted.filter(a => a.resolved);
+    const minorAttacks = targeted.filter(a => a.severity === "minor");
     const supports = supportsByClaim.get(c.id) ?? 0;
 
     // Implementation 3と同じロジック: 元の信念度を初期値として使用
@@ -482,24 +320,19 @@ export function recalcClaimConfidences(blackboard: MultiPersonaBlackboard): Mult
     const baseConfidence = c.confidence ?? 0.7;
     let confidence = baseConfidence;
 
-    // 未解決の重大な反論がある場合、信念度を下げる
+    // 重大な反論がある場合、信念度を下げる
     // 反論の影響を段階的に減らす（最初の反論は-0.1、2つ目以降は-0.05）
-    const unresolvedMajorAttacks = targeted.filter(
-      a => !a.resolved && (a.severity === "critical" || a.severity === "major"),
-    );
-    if (unresolvedMajorAttacks.length > 0) {
+    const majorAttacks = targeted.filter(a => a.severity === "critical" || a.severity === "major");
+    if (majorAttacks.length > 0) {
       // 最初の反論は-0.1、2つ目以降は-0.05
-      confidence -= 0.1 + (unresolvedMajorAttacks.length - 1) * 0.05;
+      confidence -= 0.1 + (majorAttacks.length - 1) * 0.05;
       // 最大で-0.3まで（3件以上の反論があっても、影響を制限）
       // Implementation 3と同じロジック: 元の信念度から-0.3を上限とする
       confidence = Math.max(confidence, baseConfidence - 0.3);
     }
 
-    // 未解決の軽微な反論がある場合、少し信念度を下げる
-    confidence -= unresolvedMinorAttacks.length * 0.03;
-
-    // 解決済みの反論がある場合、議論が深まったことを示すため、少し信念度を上げる
-    confidence += resolvedAttacks.length * 0.02;
+    // 軽微な反論がある場合、少し信念度を下げる
+    confidence -= minorAttacks.length * 0.03;
 
     // 支持する主張がある場合、信念度を上げる
     confidence += supports * 0.05;

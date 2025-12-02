@@ -17,20 +17,8 @@ function formatClaims(blackboard: BlackboardState): string {
 function formatAttacks(blackboard: BlackboardState): string {
   return (
     blackboard.attacks
-      .map(
-        a =>
-          `- ${a.fromClaimId} → ${a.toClaimId}: ${a.description} [${a.severity}] ${a.resolved ? "✓解決済" : "未解決"}`,
-      )
-      .join("\n") || "（まだ反論がありません）"
-  );
-}
-
-function formatUnresolvedAttacks(blackboard: BlackboardState): string {
-  const unresolved = blackboard.attacks.filter(a => !a.resolved);
-  return (
-    unresolved
       .map(a => `- ${a.fromClaimId} → ${a.toClaimId}: ${a.description} [${a.severity}]`)
-      .join("\n") || "（未解決の反論はありません）"
+      .join("\n") || "（まだ反論がありません）"
   );
 }
 
@@ -40,8 +28,6 @@ function formatUnresolvedAttacks(blackboard: BlackboardState): string {
 export function buildDeliberationPrompt(blackboard: BlackboardState): string {
   const claimsText = formatClaims(blackboard);
   const attacksText = formatAttacks(blackboard);
-  const unresolvedAttacksText = formatUnresolvedAttacks(blackboard);
-  const unresolvedAttacks = blackboard.attacks.filter(a => !a.resolved);
   const stanceAnalysis = analyzeArgumentStances(blackboard);
 
   return `
@@ -56,19 +42,10 @@ ${claimsText}
 ### 攻撃（Attacks）
 ${attacksText}
 
-### 未解決の反論（再反論を検討すべき）⚠️ 優先度: 高
-${unresolvedAttacksText}
-
-${
-  unresolvedAttacks.length > 0
-    ? `\n**⚠️ 重要**: ${unresolvedAttacks.length}件の未解決の反論があります。これらの反論への再反論を**最優先**で検討してください。\n- 新しい反論を追加する際は、既存の未解決の反論を解決することを優先してください\n- 新しい主張を追加する際は、その主張で既存の未解決の反論を攻撃することを検討してください\n`
-    : ""
-}
-
 ### 議論の状態
 - ステップ数: ${blackboard.meta.stepCount}
 - 主張数: ${blackboard.claims.length}
-- 反論数: ${blackboard.attacks.length}（未解決: ${unresolvedAttacks.length}件）
+- 反論数: ${blackboard.attacks.length}
 - 反論率: ${blackboard.claims.length > 0 ? ((blackboard.attacks.length / blackboard.claims.length) * 100).toFixed(1) : "0"}%（理想: 30-70%の範囲）
 - 賛成の主張: ${stanceAnalysis.proCount}件
 - 反対の主張: ${stanceAnalysis.conCount}件
@@ -165,8 +142,7 @@ ${
   "shouldFinalize": boolean,
   "convergenceAnalysis": {
     "beliefConvergence": 0.0-1.0,
-    "noveltyRate": 0.0-1.0,
-    "unresolvedCriticalAttacks": 0
+    "noveltyRate": 0.0-1.0
   }
 }
 \`\`\`
@@ -200,7 +176,6 @@ export function buildExecutionPrompt(
 
   const claimsText = formatClaims(blackboard);
   const attacksText = formatAttacks(blackboard);
-  const unresolvedAttacksText = formatUnresolvedAttacks(blackboard);
 
   const base = `
 ## 実行する対話行為
@@ -214,9 +189,6 @@ ${claimsText}
 
 ## 現在の攻撃
 ${attacksText}
-
-## 未解決の反論（再反論を検討すべき）⚠️ 優先度: 高
-${unresolvedAttacksText}
 `;
 
   const common = `
@@ -231,14 +203,9 @@ ${unresolvedAttacksText}
 - **一貫性**: 主張間の矛盾がないこと、論理的な整合性の維持
 - **根拠の妥当性**: 研究や証拠に基づく主張、具体的な例やデータの引用（可能な範囲で）
 
-**⚠️ 最優先: 未解決の反論への再反論を積極的に検討する**
-- **未解決の反論がある場合、それらへの再反論を最優先で検討してください**
-- 新しい主張を追加する際は、その主張で既存の未解決の反論を攻撃することを優先してください
+**反論の生成原則:**
+- 新しい主張を追加する際は、その主張で既存の反論を攻撃することを検討してください
 - 反論への再反論は、新しい主張を追加してから、その主張で既存の反論を攻撃する形で実現できます
-- **反論解決の原則**: 新しい反論を追加する際は、既存の未解決の反論を解決することを最優先で検討してください。
-  - 新しい反論が既存の反論の元主張（fromClaimId）を攻撃する場合、その既存の反論は「反論された」とみなされます
-  - 新しい主張が既存の反論の論点を直接的に覆す場合、その反論は「解決済み」とみなされます
-  - **キーワードパターン**: 反論の論点に関連するキーワード（「アクセス制限」「最新情報」「代替手段」など）を含む主張を追加することで、反論が自動的に解決される場合があります
 - **重複反論の防止**: 既存の反論と同じ内容の反論を生成しないでください。同じ fromClaimId → toClaimId の組み合わせで、類似した説明の反論は避けてください。
 
 出力要件:
@@ -313,8 +280,7 @@ ${common}
       "toClaimId": "c1",
       "type": "logic" | "evidence" | "relevance",
       "severity": "major" | "critical" | "minor",
-      "description": "反論の内容",
-      "resolved": false
+      "description": "反論の内容"
     }
   ]
 }

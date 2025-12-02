@@ -75,7 +75,6 @@ async function main() {
         type: string;
         severity: string;
         description: string;
-        resolved: boolean;
       }
 
       const output = result.result as {
