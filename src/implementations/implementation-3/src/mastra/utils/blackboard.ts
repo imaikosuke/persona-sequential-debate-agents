@@ -12,7 +12,6 @@ export function initializeBlackboard(topic: string, tokenBudget = 10000): Blackb
     topic,
     claims: [],
     attacks: [],
-    writepad: {},
     meta: {
       stepCount: 0,
       tokenBudget,
@@ -185,11 +184,6 @@ export function updateBlackboard(
       lastUpdated: updated.meta.stepCount,
     };
   });
-
-  // 最終文書を設定
-  if (action.finalDocument) {
-    updated.writepad.finalDraft = action.finalDocument;
-  }
 
   return updated;
 }

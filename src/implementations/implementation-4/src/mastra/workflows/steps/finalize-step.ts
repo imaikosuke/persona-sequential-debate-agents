@@ -26,11 +26,9 @@ export const finalizeStep = createStep({
   execute: async ({ inputData }) => {
     const { blackboard, finalStatus } = inputData;
 
-    // Ensure final document exists: if absent, synthesize one from blackboard
-    const finalDocRaw = blackboard.writepad?.finalDraft?.trim()
-      ? blackboard.writepad.finalDraft
-      : await generateFinalDocument(blackboard);
-    // ID参照を除去（writepad.finalDraftから来た場合も含む）
+    // 最終文書を生成（writepadがないため、常に生成する）
+    const finalDocRaw = await generateFinalDocument(blackboard);
+    // ID参照を除去
     const finalDoc = removeClaimIds(finalDocRaw);
 
     const result = {

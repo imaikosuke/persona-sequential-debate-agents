@@ -39,14 +39,6 @@ export interface Attack {
 }
 
 /**
- * 執筆パッド（Writepad）
- * 最終文書の下書き
- */
-export interface Writepad {
-  finalDraft?: string; // 最終原稿（完成時）
-}
-
-/**
  * ブラックボード状態（BlackboardState）
  * 議論の進捗を追跡する共有メモリ
  */
@@ -59,9 +51,6 @@ export interface BlackboardState {
 
   // 攻撃（反論）リスト
   attacks: Attack[];
-
-  // 執筆パッド（最終文書の下書き）
-  writepad: Writepad;
 
   // メタ情報
   meta: {

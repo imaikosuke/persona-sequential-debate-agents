@@ -38,10 +38,6 @@ export function initializeBlackboard(
       nextSteps: ["トピックに関連する主要な主張を提案する", "主張の根拠を明確にする"],
       avoidTopics: [],
     },
-    writepad: {
-      outline: "",
-      sections: [],
-    },
     meta: {
       stepCount: 0,
       tokenBudget,
@@ -137,13 +133,8 @@ export function updateBlackboard(
     updated.plan = { ...updated.plan, ...executionResult.updatedPlan };
   }
 
-  if (executionResult.updatedWritepad) {
-    updated.writepad = { ...updated.writepad, ...executionResult.updatedWritepad };
-  }
-
-  if (executionResult.finalDocument) {
-    updated.writepad.finalDraft = executionResult.finalDocument;
-  }
+  // finalDocumentはExecutionResultに含まれるが、writepadがないため保存しない
+  // finalize-stepで必要に応じて生成される
 
   return updated;
 }

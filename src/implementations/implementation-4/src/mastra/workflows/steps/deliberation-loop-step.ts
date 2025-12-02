@@ -2,7 +2,6 @@ import { createStep } from "@mastra/core/workflows";
 import { z } from "zod";
 
 import { selectDialogueActWithPersona } from "../../agents/deliberative-agent";
-import { generateFinalDocument } from "../../agents/final-writer-agent";
 import { executeDialogueActWithPersona } from "../../agents/multi-executor-agent";
 import type { MultiPersonaBlackboard } from "../../types";
 import { DialogueAct } from "../../types";
@@ -85,52 +84,15 @@ export const deliberationLoopStep = createStep({
       if (conv.shouldFinalize) {
         console.log(`\n収束: ${conv.reason}`);
 
-        // 最終文書を生成（確実に生成する）
-        console.log("\n最終文書を生成中...");
-        if (!blackboard.writepad.finalDraft) {
-          // FINALIZEアクションを試行
-          const finalDecision = await selectDialogueActWithPersona(blackboard);
-          if (
-            finalDecision &&
-            finalDecision.dialogueAct === DialogueAct.FINALIZE &&
-            finalDecision.selectedPersonaId
-          ) {
-            const finalPersona = blackboard.personas.find(
-              p => p.id === finalDecision.selectedPersonaId,
-            );
-            if (finalPersona) {
-              const finalExecution = await executeDialogueActWithPersona(
-                DialogueAct.FINALIZE,
-                finalPersona,
-                blackboard,
-              );
-              if (finalExecution && finalExecution.finalDocument) {
-                blackboard = updateBlackboard(blackboard, finalExecution);
-              }
-            }
-          }
-
-          // FINALIZEアクションが生成されなかった場合、またはfinalDocumentがない場合、LLMで最終文書を生成
-          if (!blackboard.writepad.finalDraft) {
-            console.log("FINALIZEアクションが生成されなかったため、LLMで最終文書を生成します...");
-            const finalDocument = await generateFinalDocument(blackboard);
-            blackboard.writepad.finalDraft = finalDocument;
-          }
-        }
+        // 最終文書はfinalize-stepで生成される（writepadがないため）
+        console.log("\n収束条件を満たしました。最終文書はfinalize-stepで生成されます。");
         shouldContinue = false;
         break;
       }
 
       if (decision.dialogueAct === DialogueAct.FINALIZE || decision.shouldFinalize) {
-        // FINALIZEアクションが実行された場合、最終文書を確認
-        if (execution.finalDocument) {
-          blackboard.writepad.finalDraft = execution.finalDocument;
-        } else if (!blackboard.writepad.finalDraft) {
-          // finalDocumentがない場合、LLMで最終文書を生成
-          console.log("\n最終文書を生成中...");
-          const finalDocument = await generateFinalDocument(blackboard);
-          blackboard.writepad.finalDraft = finalDocument;
-        }
+        // FINALIZEアクションが実行された場合、最終文書はfinalize-stepで生成される
+        console.log("\n議論を終了します。最終文書はfinalize-stepで生成されます。");
         shouldContinue = false;
         break;
       }
@@ -141,36 +103,9 @@ export const deliberationLoopStep = createStep({
         ? "最大ステップ数に達しました"
         : "収束条件を満たして終了しました";
 
-    // 強制終了時にも最終文書を生成する
-    if (blackboard.meta.stepCount >= maxSteps && !blackboard.writepad.finalDraft) {
-      console.log("\n最大ステップ数に達したため、最終文書を生成します...");
-      const finalDecision = await selectDialogueActWithPersona(blackboard);
-      if (
-        finalDecision &&
-        finalDecision.dialogueAct === DialogueAct.FINALIZE &&
-        finalDecision.selectedPersonaId
-      ) {
-        const finalPersona = blackboard.personas.find(
-          p => p.id === finalDecision.selectedPersonaId,
-        );
-        if (finalPersona) {
-          const finalExecution = await executeDialogueActWithPersona(
-            DialogueAct.FINALIZE,
-            finalPersona,
-            blackboard,
-          );
-          if (finalExecution && finalExecution.finalDocument) {
-            blackboard = updateBlackboard(blackboard, finalExecution);
-          }
-        }
-      }
-
-      // FINALIZEアクションが生成されなかった場合、LLMで最終文書を生成
-      if (!blackboard.writepad.finalDraft) {
-        console.log("FINALIZEアクションが生成されなかったため、LLMで最終文書を生成します...");
-        const finalDocument = await generateFinalDocument(blackboard);
-        blackboard.writepad.finalDraft = finalDocument;
-      }
+    // 強制終了時にも最終文書を生成する（finalize-stepで生成される）
+    if (blackboard.meta.stepCount >= maxSteps) {
+      console.log("\n最大ステップ数に達しました。最終文書はfinalize-stepで生成されます。");
     }
 
     console.log(`\n=== 討論終了 ===`);

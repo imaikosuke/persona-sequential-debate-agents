@@ -42,16 +42,6 @@ export interface Plan {
   avoidTopics: string[];
 }
 
-export interface Writepad {
-  outline: string;
-  sections: {
-    title: string;
-    content: string;
-    claimIds: string[];
-  }[];
-  finalDraft?: string;
-}
-
 export interface CrossReference {
   id: string;
   fromPersonaId: string;
@@ -74,7 +64,6 @@ export interface BlackboardState {
   attacks: Attack[];
   questions: Question[];
   plan: Plan;
-  writepad: Writepad;
   meta: {
     stepCount: number;
     tokenBudget: number;
@@ -123,7 +112,6 @@ export interface ExecutionResult {
   newAttacks?: Attack[];
   newQuestions?: Question[];
   updatedPlan?: Partial<Plan>;
-  updatedWritepad?: Partial<Writepad>;
   finalDocument?: string;
   crossReferences?: CrossReference[];
 }

@@ -34,9 +34,13 @@ export const finalizeStep = createStep({
   execute: async ({ inputData }) => {
     const { blackboard, finalStatus } = inputData;
 
+    // 最終文書を生成（writepadがないため、常に生成する）
+    const { generateFinalDocument } = await import("../../prompts/final-document");
+    const finalDocument = await generateFinalDocument(blackboard);
+
     const result = {
       topic: blackboard.topic,
-      argument: blackboard.writepad?.finalDraft,
+      argument: finalDocument,
       claims: blackboard.claims,
       attacks: blackboard.attacks,
       stepCount: blackboard.meta.stepCount,

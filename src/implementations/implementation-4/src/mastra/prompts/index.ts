@@ -267,7 +267,6 @@ ${formatAttacks(blackboard)}
   ],
   "newQuestions": [],
   "updatedPlan": {},
-  "updatedWritepad": {},
   "finalDocument": "",
   "crossReferences": [
     {

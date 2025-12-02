@@ -8,34 +8,8 @@ import { z } from "zod";
 
 import { selectDialogueAct } from "../../agents/deliberative-agent";
 import { executeDialogueAct } from "../../agents/executor-agent";
-import { generateFinalDocument } from "../../prompts/final-document";
 import { type BlackboardState, DialogueAct } from "../../types";
 import { checkConvergence, updateBlackboard } from "../../utils/blackboard";
-
-/**
- * 最終文書を生成する（共通関数）
- * FINALIZEアクションを試行し、失敗した場合はLLMで直接生成
- */
-async function ensureFinalDocument(blackboard: BlackboardState): Promise<BlackboardState> {
-  const finalDecision = await selectDialogueAct(blackboard);
-  if (finalDecision && finalDecision.dialogueAct === DialogueAct.FINALIZE) {
-    const finalExecution = await executeDialogueAct(DialogueAct.FINALIZE, blackboard);
-    if (finalExecution && finalExecution.finalDocument) {
-      return updateBlackboard(blackboard, finalExecution);
-    }
-  }
-
-  // FINALIZEアクションが生成されなかった場合、またはfinalDocumentがない場合、LLMで最終文書を生成
-  console.log("FINALIZEアクションが生成されなかったため、LLMで最終文書を生成します...");
-  const finalDocument = await generateFinalDocument(blackboard);
-  return {
-    ...blackboard,
-    writepad: {
-      ...blackboard.writepad,
-      finalDraft: finalDocument,
-    },
-  };
-}
 
 /**
  * 討論ループステップ（簡略化版）
@@ -88,9 +62,6 @@ export const deliberationLoopStep = createStep({
       // FINALIZEアクションの場合は終了
       if (decision.dialogueAct === DialogueAct.FINALIZE || decision.shouldFinalize) {
         console.log("\n議論を終了します");
-        if (execution.finalDocument) {
-          blackboard.writepad.finalDraft = execution.finalDocument;
-        }
         break;
       }
 
@@ -100,8 +71,7 @@ export const deliberationLoopStep = createStep({
       const convergence = checkConvergence(blackboard, maxSteps);
       if (convergence.shouldFinalize) {
         console.log(`\n収束: ${convergence.reason}`);
-        console.log("\n最終文書を生成中...");
-        blackboard = await ensureFinalDocument(blackboard);
+        console.log("\n最終文書はfinalize-stepで生成されます。");
         break;
       }
     }
@@ -111,10 +81,9 @@ export const deliberationLoopStep = createStep({
         ? "最大ステップ数に達しました"
         : "収束条件を満たして終了しました";
 
-    // 強制終了時にも最終文書を生成する
-    if (blackboard.meta.stepCount >= maxSteps && !blackboard.writepad.finalDraft) {
-      console.log("\n最大ステップ数に達したため、最終文書を生成します...");
-      blackboard = await ensureFinalDocument(blackboard);
+    // 強制終了時にも最終文書を生成する（finalize-stepで生成される）
+    if (blackboard.meta.stepCount >= maxSteps) {
+      console.log("\n最大ステップ数に達しました");
     }
 
     console.log(`\n=== 討論終了 ===`);
