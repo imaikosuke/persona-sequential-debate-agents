@@ -20,7 +20,6 @@ export interface Claim {
   id: string;
   text: string;
   support: string[]; // 支持する証拠
-  confidence: number; // 信念度 [0.0, 1.0]
   createdAt: number; // ステップ番号
   lastUpdated: number; // 最終更新ステップ番号
 }

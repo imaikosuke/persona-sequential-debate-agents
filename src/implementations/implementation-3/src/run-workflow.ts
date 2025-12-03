@@ -31,7 +31,6 @@ interface WorkflowResult {
   claims: Array<{
     id: string;
     text: string;
-    confidence: number;
     support: string[];
     createdAt: number;
     lastUpdated: number;
@@ -98,9 +97,7 @@ async function main() {
 
       console.log("\n--- 主張一覧 ---");
       for (const claim of output.claims) {
-        console.log(
-          `[${claim.id}] 信念度: ${claim.confidence.toFixed(2)} - ${claim.text.slice(0, 100)}...`,
-        );
+        console.log(`[${claim.id}] ${claim.text.slice(0, 100)}...`);
       }
 
       if (output.attacks.length > 0) {

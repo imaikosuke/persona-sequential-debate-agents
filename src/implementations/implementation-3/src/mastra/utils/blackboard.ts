@@ -2,7 +2,7 @@
  * Implementation 3: ブラックボード操作ユーティリティ
  */
 
-import type { Attack, BlackboardState, Claim, ExecutionResult, StanceAnalysis } from "../types";
+import type { Attack, BlackboardState, ExecutionResult, StanceAnalysis } from "../types";
 
 /**
  * ブラックボードの初期化（簡略化版）
@@ -36,42 +36,6 @@ function checkDuplicateAttack(
         existing.description.includes(newAttack.description.substring(0, 20)) ||
         newAttack.description.includes(existing.description.substring(0, 20))),
   );
-}
-
-/**
- * 信念度の動的更新
- * 反論を受けた主張の信念度を下げる
- * - 初期の主張（最初の3件）には最低限の信念度0.3を保証
- * - 重大な反論: 最初の反論は-0.1、2つ目以降は-0.05、最大で-0.3まで
- * - 軽微な反論: -0.03 × 件数
- * - 支持する主張: +0.05 × 件数
- */
-function updateConfidence(claim: Claim, attacks: Attack[], supports: Claim[]): number {
-  let confidence = claim.confidence;
-
-  // 初期の主張（最初の3件）には最低限の信念度を保証
-  const isInitialClaim = claim.createdAt <= 3;
-  const minConfidence = isInitialClaim ? 0.3 : 0.0;
-
-  // 重大な反論がある場合、信念度を下げる
-  // 反論の影響を段階的に減らす（最初の反論は-0.1、2つ目以降は-0.05）
-  const majorAttacks = attacks.filter(a => a.severity === "critical" || a.severity === "major");
-  if (majorAttacks.length > 0) {
-    // 最初の反論は-0.1、2つ目以降は-0.05
-    confidence -= 0.1 + (majorAttacks.length - 1) * 0.05;
-    // 最大で-0.3まで（3件以上の反論があっても、影響を制限）
-    confidence = Math.max(confidence, claim.confidence - 0.3);
-  }
-
-  // 軽微な反論がある場合、少し信念度を下げる
-  const minorAttacks = attacks.filter(a => a.severity === "minor");
-  confidence -= minorAttacks.length * 0.03;
-
-  // 支持する主張がある場合、信念度を上げる
-  confidence += supports.length * 0.05;
-
-  // 信念度を [minConfidence, 1.0] の範囲に制限
-  return Math.max(minConfidence, Math.min(1.0, confidence));
 }
 
 /**
@@ -111,14 +75,10 @@ export function updateBlackboard(
           existingClaimIds.add(claimId);
         }
 
-        // テキストから不要な文字列を削除（例: "(信念度: 0.70)"）
-        let cleanedText = claim.text || "";
-        cleanedText = cleanedText.replace(/\s*\(信念度:\s*[\d.]+\)\s*/g, "").trim();
-
         return {
           ...claim,
           id: claimId,
-          text: cleanedText,
+          text: claim.text || "",
           createdAt: updated.meta.stepCount,
           lastUpdated: updated.meta.stepCount,
         };
@@ -167,23 +127,11 @@ export function updateBlackboard(
     updated.attacks = [...updated.attacks, ...newAttacksWithDefaults];
   }
 
-  // 信念度を動的に更新
-  updated.claims = updated.claims.map(claim => {
-    // この主張を攻撃する反論を取得
-    const attacksOnClaim = updated.attacks.filter(a => a.toClaimId === claim.id);
-
-    // この主張を支持する主張を取得（将来的に実装可能）
-    const supportsClaim: Claim[] = [];
-
-    // 信念度を更新
-    const newConfidence = updateConfidence(claim, attacksOnClaim, supportsClaim);
-
-    return {
-      ...claim,
-      confidence: newConfidence,
-      lastUpdated: updated.meta.stepCount,
-    };
-  });
+  // 主張のlastUpdatedを更新
+  updated.claims = updated.claims.map(claim => ({
+    ...claim,
+    lastUpdated: updated.meta.stepCount,
+  }));
 
   return updated;
 }

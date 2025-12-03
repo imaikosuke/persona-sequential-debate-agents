@@ -62,7 +62,6 @@ async function main() {
       interface Claim {
         id: string;
         text: string;
-        confidence: number;
         support: string[];
         createdAt: number;
         lastUpdated: number;

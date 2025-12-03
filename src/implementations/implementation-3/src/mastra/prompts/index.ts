@@ -8,9 +8,7 @@ import { buildFinalDocumentPrompt } from "./final-document";
 
 function formatClaims(blackboard: BlackboardState): string {
   return (
-    blackboard.claims
-      .map(c => `- [${c.id}] ${c.text} (信念度: ${c.confidence.toFixed(2)})`)
-      .join("\n") || "（まだ主張がありません）"
+    blackboard.claims.map(c => `- [${c.id}] ${c.text}`).join("\n") || "（まだ主張がありません）"
   );
 }
 
@@ -231,7 +229,6 @@ ${common}
       "id": "cX",
       "text": "...",
       "support": [],
-      "confidence": 0.7,
       "createdAt": 0,
       "lastUpdated": 0
     }
@@ -268,7 +265,6 @@ ${common}
       "id": "c3",
       "text": "新しい主張（反論の根拠）",
       "support": [],
-      "confidence": 0.7,
       "createdAt": 0,
       "lastUpdated": 0
     }

@@ -48,8 +48,7 @@ function formatClaims(blackboard: MultiPersonaBlackboard): string {
   return (
     blackboard.claims
       .map(
-        c =>
-          `- [${c.id}] ${c.text} (信念度: ${c.confidence.toFixed(2)})${c.personaContext ? ` by ${c.personaContext.personaId}` : ""}`,
+        c => `- [${c.id}] ${c.text}${c.personaContext ? ` by ${c.personaContext.personaId}` : ""}`,
       )
       .join("\n") || "（まだ主張がありません）"
   );
@@ -236,7 +235,6 @@ ${formatAttacks(blackboard)}
       "id": "cX",
       "text": "...",
       "support": [],
-      "confidence": 0.7,
       "createdAt": 0,
       "lastUpdated": 0,
       "personaContext": { "personaId": "${persona.id}" }

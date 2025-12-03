@@ -8,7 +8,6 @@ import { DialogueAct } from "../../types";
 import {
   calculateConsensusLevel,
   checkConvergence,
-  recalcClaimConfidences,
   updateBlackboard,
 } from "../../utils/blackboard";
 
@@ -69,9 +68,6 @@ export const deliberationLoopStep = createStep({
       }
 
       blackboard = updateBlackboard(blackboard, execution);
-
-      // 攻撃・クロス参照に基づいて信念度を再計算
-      blackboard = recalcClaimConfidences(blackboard);
 
       // 直近の選択ペルソナを記録
       blackboard.meta.lastSelectedPersonaId = persona.id;

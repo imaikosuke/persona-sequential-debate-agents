@@ -12,7 +12,6 @@ export interface Claim {
   id: string;
   text: string;
   support: string[];
-  confidence: number; // [0.0, 1.0]
   createdAt: number;
   lastUpdated: number;
   personaContext?: {

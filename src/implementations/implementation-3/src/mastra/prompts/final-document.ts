@@ -12,21 +12,20 @@ import type { BlackboardState } from "../types";
  * 逐次討論の利点を活かすため、必要最小限の情報のみを提供
  */
 export function buildFinalDocumentPrompt(blackboard: BlackboardState): string {
-  // 主張を信念度順にソートし、上位5個のみ抽出
-  const sortedClaims = [...blackboard.claims].sort((a, b) => b.confidence - a.confidence);
-  const topClaims = sortedClaims.slice(0, 5);
+  // すべての主張を提示（信念度によるフィルタリングは行わない）
+  const allClaims = blackboard.claims;
 
   // 重要な反論のみ抽出（重大度が高いもの）
   const importantAttacks = blackboard.attacks
     .filter(a => a.severity === "critical" || a.severity === "major")
-    .slice(0, 5);
+    .slice(0, 10);
 
   return `
 ## トピック
 ${blackboard.topic}
 
-## 主要な主張
-${topClaims.map((c, idx) => `${idx + 1}. ${c.text}`).join("\n")}
+## 主張
+${allClaims.map((c, idx) => `${idx + 1}. ${c.text}`).join("\n")}
 
 ## 重要な反論
 ${importantAttacks.length > 0 ? importantAttacks.map(a => `- ${a.description}`).join("\n") : "（なし）"}

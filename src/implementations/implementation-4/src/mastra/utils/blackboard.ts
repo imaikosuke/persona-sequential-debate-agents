@@ -3,7 +3,7 @@
  * Implementation-3の改善点を反映
  */
 
-import type { Attack, Claim, ExecutionResult, MultiPersonaBlackboard } from "../types";
+import type { Attack, ExecutionResult, MultiPersonaBlackboard } from "../types";
 
 /**
  * 重複反論をチェック
@@ -136,17 +136,11 @@ export function calculateConflictRate(attacks: Attack[]): number {
   return 1.0;
 }
 
-export function calculateConvergence(claims: Claim[]): number {
-  if (claims.length === 0) return 0;
-  const avg = claims.reduce((s, c) => s + c.confidence, 0) / claims.length;
-  return Math.min(1, Math.max(0, avg));
-}
-
 export function calculateConsensusLevel(blackboard: MultiPersonaBlackboard): number {
   const supportRate = calculateSupportRate(blackboard.crossReferences);
   const conflictRate = calculateConflictRate(blackboard.attacks);
-  const convergence = calculateConvergence(blackboard.claims);
-  return supportRate * 0.4 + (1 - conflictRate) * 0.3 + convergence * 0.3;
+  // 信念度を削除したため、supportRateとconflictRateのみで合意レベルを計算
+  return supportRate * 0.6 + (1 - conflictRate) * 0.4;
 }
 
 /**
@@ -252,74 +246,4 @@ export function checkConvergence(
     shouldFinalize: true,
     reason: `収束条件を満たしました（主張数: ${blackboard.claims.length}, 反論数: ${blackboard.attacks.length}, ステップ数: ${blackboard.meta.stepCount}）`,
   };
-}
-
-/**
- * 攻撃・クロス参照に基づく信念度の再計算（ヒューリスティック）
- * Implementation 3と同じロジックを使用（逐次討論の仕組みを統一評価するため）
- * - 初期の主張（最初の3件）には最低限の信念度0.3を保証
- * - 重大な反論: 最初の反論は-0.1、2つ目以降は-0.05、最大で-0.3まで
- * - 軽微な反論: -0.03 × 件数
- * - 支持する主張: +0.05 × 件数（クロス参照からカウント）
- */
-export function recalcClaimConfidences(blackboard: MultiPersonaBlackboard): MultiPersonaBlackboard {
-  if (blackboard.claims.length === 0) return blackboard;
-
-  const currentStep = blackboard.meta.stepCount;
-  const attacksByTarget = new Map<string, Attack[]>();
-  for (const a of blackboard.attacks) {
-    const arr = attacksByTarget.get(a.toClaimId) ?? [];
-    arr.push(a);
-    attacksByTarget.set(a.toClaimId, arr);
-  }
-
-  const supportsByClaim = new Map<string, number>();
-  for (const x of blackboard.crossReferences) {
-    if (x.type === "support") {
-      supportsByClaim.set(x.claimId, (supportsByClaim.get(x.claimId) ?? 0) + 1);
-    }
-  }
-
-  const updatedClaims: Claim[] = blackboard.claims.map(c => {
-    // 初期の主張（最初の3件）には最低限の信念度を保証
-    const isInitialClaim = c.createdAt <= 3;
-    const minConfidence = isInitialClaim ? 0.3 : 0.0;
-
-    const targeted = attacksByTarget.get(c.id) ?? [];
-    const minorAttacks = targeted.filter(a => a.severity === "minor");
-    const supports = supportsByClaim.get(c.id) ?? 0;
-
-    // Implementation 3と同じロジック: 元の信念度を初期値として使用
-    // confidenceが未定義の場合は0.7をデフォルト値として使用
-    const baseConfidence = c.confidence ?? 0.7;
-    let confidence = baseConfidence;
-
-    // 重大な反論がある場合、信念度を下げる
-    // 反論の影響を段階的に減らす（最初の反論は-0.1、2つ目以降は-0.05）
-    const majorAttacks = targeted.filter(a => a.severity === "critical" || a.severity === "major");
-    if (majorAttacks.length > 0) {
-      // 最初の反論は-0.1、2つ目以降は-0.05
-      confidence -= 0.1 + (majorAttacks.length - 1) * 0.05;
-      // 最大で-0.3まで（3件以上の反論があっても、影響を制限）
-      // Implementation 3と同じロジック: 元の信念度から-0.3を上限とする
-      confidence = Math.max(confidence, baseConfidence - 0.3);
-    }
-
-    // 軽微な反論がある場合、少し信念度を下げる
-    confidence -= minorAttacks.length * 0.03;
-
-    // 支持する主張がある場合、信念度を上げる
-    confidence += supports * 0.05;
-
-    // 信念度を [minConfidence, 1.0] の範囲に制限
-    const newConfidence = Math.max(minConfidence, Math.min(1.0, confidence));
-
-    return {
-      ...c,
-      confidence: Number.isFinite(newConfidence) ? newConfidence : baseConfidence,
-      lastUpdated: currentStep,
-    };
-  });
-
-  return { ...blackboard, claims: updatedClaims };
 }
