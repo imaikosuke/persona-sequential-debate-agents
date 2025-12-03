@@ -154,10 +154,10 @@ export function checkConvergence(
     };
   }
 
-  // 最小条件チェック（厳格化）
-  const minClaims = 6; // 5から6に引き上げ（より多様な議論を確保）
-  const minAttacks = 4; // 3から4に引き上げ（より深い議論を確保）
-  const minSteps = 5; // 4から5に引き上げ（議論の深さを確保）
+  // 最小条件チェック（Implementation-4と統一）
+  const minClaims = 5;
+  const minAttacks = 3;
+  const minSteps = 4;
 
   // 最低ステップ数チェック（逐次討論の効果を確保）
   if (blackboard.meta.stepCount < minSteps) {

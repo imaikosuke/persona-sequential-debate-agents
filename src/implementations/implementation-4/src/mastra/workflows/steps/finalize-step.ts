@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { createStep } from "@mastra/core/workflows";
 import { z } from "zod";
 
-import { generateFinalDocument, removeClaimIds } from "../../agents/final-writer-agent";
+import { generateFinalDocument } from "../../agents/final-writer-agent";
 import type { MultiPersonaBlackboard } from "../../types";
 
 export const finalizeStep = createStep({
@@ -27,13 +27,11 @@ export const finalizeStep = createStep({
     const { blackboard, finalStatus } = inputData;
 
     // 最終文書を生成（writepadがないため、常に生成する）
-    const finalDocRaw = await generateFinalDocument(blackboard);
-    // ID参照を除去
-    const finalDoc = removeClaimIds(finalDocRaw);
+    const finalDocument = await generateFinalDocument(blackboard);
 
     const result = {
       topic: blackboard.topic,
-      argument: finalDoc,
+      argument: finalDocument,
       claims: blackboard.claims,
       attacks: blackboard.attacks,
       stepCount: blackboard.meta.stepCount,
