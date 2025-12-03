@@ -1,4 +1,4 @@
-.PHONY: help dev build start clean install lint lint-fix format format-fix typecheck check run-1 run-2 run-3 run-4 run-all
+.PHONY: help dev build start clean install lint lint-fix format format-fix typecheck check run-1 run-2 run-3 run-4 run-all test
 
 # デフォルトターゲット
 help:
@@ -38,6 +38,7 @@ help:
 	@echo "  make format-fix - Prettierでコードフォーマットを自動修正"
 	@echo "  make typecheck  - TypeScriptの型チェック"
 	@echo "  make check      - コードチェック"
+	@echo "  make test       - フォーマット修正、リント修正、チェックを実行"
 # 依存関係のインストール
 install:
 	@echo "依存関係をインストール中..."
@@ -174,3 +175,5 @@ run-all:
 	else \
 		$(MAKE) -j4 TOPIC="$(TOPIC)" run-1 run-2 run-3 run-4; \
 	fi
+
+test: format-fix lint-fix check
